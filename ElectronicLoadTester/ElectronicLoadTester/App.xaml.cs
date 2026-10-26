@@ -1,7 +1,9 @@
 ﻿using System;
+using System.IO.Ports;
 using System.Windows;
-using ElectronicLoadTester.Hardware;
+using ElectronicLoadTester.Services;
 using ElectronicLoadTester.ViewModels;
+using ElectronicLoadTester.Views;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
@@ -18,41 +20,55 @@ namespace ElectronicLoadTester
             _host = Host.CreateDefaultBuilder()
                 .ConfigureServices((context, services) =>
                 {
-                    // 1. 하드웨어 드라이버 싱글톤 등록
-                    services.AddSingleton<IPowerSupply, OwonPowerSupply>();
-                    services.AddSingleton<IElectronicLoad, RigolElectronicLoad>();
-                    services.AddSingleton<IRelayController, SerialRelayController>();
+                    // 1. 하드웨어 통합 관리 서비스 (싱글톤)
+                    services.AddSingleton<IDeviceManagerService, DeviceManagerService>();
 
                     // 2. 뷰모델 등록
                     services.AddSingleton<MainViewModel>();
+                    services.AddTransient<SelfTestViewModel>(); // 팝업 시마다 상태 초기화
 
-                    // 3. 메인 윈도우 등록
+                    // 3. 뷰(윈도우) 등록
                     services.AddSingleton<MainWindow>();
+                    services.AddTransient<SelfTestWindow>();
                 })
                 .Build();
         }
 
         protected override async void OnStartup(StartupEventArgs e)
         {
+            // base 호출을 먼저 실행하여 WPF Application 라이프사이클을 정상 초기화
+            base.OnStartup(e);
+
             await _host!.StartAsync();
 
             var mainWindow = _host.Services.GetRequiredService<MainWindow>();
             mainWindow.Show();
-
-            base.OnStartup(e);
         }
 
         protected override async void OnExit(ExitEventArgs e)
         {
             if (_host != null)
             {
-                var power = _host.Services.GetService<IPowerSupply>();
-                var load = _host.Services.GetService<IElectronicLoad>();
-                var relay = _host.Services.GetService<IRelayController>();
+                // 1. 마지막 UI 설정값 영구 저장
+                try
+                {
+                    var mainVm = _host.Services.GetService<MainViewModel>();
+                    mainVm?.SaveCurrentUiToProfile();
+                }
+                catch { }
 
-                if (power != null) await power.DisposeAsync();
-                if (load != null) await load.DisposeAsync();
-                if (relay != null) await relay.DisposeAsync();
+                // 2. 열려 있는 시리얼 통신 포트 안전 닫기
+                try
+                {
+                    var devManager = _host.Services.GetService<IDeviceManagerService>();
+                    if (devManager != null)
+                    {
+                        if (devManager.PowerPort?.IsOpen == true) devManager.PowerPort.Close();
+                        if (devManager.LoadPort?.IsOpen == true) devManager.LoadPort.Close();
+                        if (devManager.RelayPort?.IsOpen == true) devManager.RelayPort.Close();
+                    }
+                }
+                catch { }
 
                 await _host.StopAsync();
                 _host.Dispose();

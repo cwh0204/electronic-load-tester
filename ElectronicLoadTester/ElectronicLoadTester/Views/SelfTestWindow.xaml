@@ -16,17 +16,46 @@
                  GlowBrush="#CBD5E1">
 
     <Window.Resources>
-        <!-- 미니멀 카드 스타일 -->
-        <Style x:Key="DeviceRowCard" TargetType="Border">
+        <!-- 클릭 가능한 장비 카드 바 버튼 스타일 -->
+        <Style x:Key="DeviceRowButton" TargetType="Button">
             <Setter Property="Background" Value="#FFFFFF"/>
             <Setter Property="BorderBrush" Value="#E2E8F0"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="CornerRadius" Value="6"/>
-            <Setter Property="Padding" Value="14,10"/>
+            <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Margin" Value="0,0,0,8"/>
+            <Setter Property="Padding" Value="16,12"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="6"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#F1F5F9"/>
+                                <Setter TargetName="border" Property="BorderBrush" Value="#93C5FD"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#E2E8F0"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.6"/>
+                                <Setter Property="Cursor" Value="Wait"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
 
-        <!-- 버튼 스타일 -->
+        <!-- 하단 액션 버튼 스타일 -->
         <Style x:Key="ActionButton" TargetType="Button" BasedOn="{StaticResource MahApps.Styles.Button.Square}">
             <Setter Property="Background" Value="#FFFFFF"/>
             <Setter Property="Foreground" Value="#334155"/>
@@ -42,7 +71,7 @@
         <Grid.RowDefinitions>
             <!-- 0: 타이틀 헤더 -->
             <RowDefinition Height="Auto"/>
-            <!-- 1: 3대 장비 통신 상태 목록 -->
+            <!-- 1: 3대 장비 클릭 가능한 카드 목록 -->
             <RowDefinition Height="*"/>
             <!-- 2: 하단 버튼 바 -->
             <RowDefinition Height="Auto"/>
@@ -55,15 +84,17 @@
                 <TextBlock Text="자가진단" FontSize="16" FontWeight="Black" Foreground="#0F172A" VerticalAlignment="Center"/>
             </StackPanel>
 
-            <TextBlock Text="{Binding DiagnosisSummaryText, FallbackValue='대기 중'}" 
+            <TextBlock Text="{Binding DiagnosisSummaryText, FallbackValue='항목을 클릭하여 개별 진단'}" 
                        FontWeight="Bold" FontSize="11" Foreground="#64748B" HorizontalAlignment="Right" VerticalAlignment="Center"/>
         </Grid>
 
-        <!-- 1. 3대 장비 통신 확인 행 -->
+        <!-- 1. 3대 장비 클릭 바 목록 -->
         <StackPanel Grid.Row="1">
 
-            <!-- [1] OWON 파워 -->
-            <Border Style="{StaticResource DeviceRowCard}">
+            <!-- [1] 파워 서플라이 바 -->
+            <Button Command="{Binding TestOwonCommand}" 
+                    Style="{StaticResource DeviceRowButton}"
+                    ToolTip="클릭하여 파워 서플라이 통신 진단">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
@@ -75,7 +106,7 @@
                     <TextBlock Grid.Column="1" Text="파워 서플라이" FontSize="13" FontWeight="Bold" Foreground="#0F172A" VerticalAlignment="Center"/>
 
                     <!-- 통신 판정 뱃지 -->
-                    <Border Grid.Column="2" CornerRadius="4" Padding="12,4" VerticalAlignment="Center">
+                    <Border Grid.Column="2" CornerRadius="4" Padding="12,4" VerticalAlignment="Center" MinWidth="54">
                         <Border.Style>
                             <Style TargetType="Border">
                                 <Setter Property="Background" Value="#F1F5F9"/>
@@ -89,7 +120,7 @@
                                 </Style.Triggers>
                             </Style>
                         </Border.Style>
-                        <TextBlock Text="{Binding OwonStatus, FallbackValue='대기'}" FontWeight="Black" FontSize="11">
+                        <TextBlock Text="{Binding OwonStatus, FallbackValue='대기'}" FontWeight="Black" FontSize="11" HorizontalAlignment="Center">
                             <TextBlock.Style>
                                 <Style TargetType="TextBlock">
                                     <Setter Property="Foreground" Value="#64748B"/>
@@ -106,10 +137,12 @@
                         </TextBlock>
                     </Border>
                 </Grid>
-            </Border>
+            </Button>
 
-            <!-- [2] Rigol 부하 -->
-            <Border Style="{StaticResource DeviceRowCard}">
+            <!-- [2] 전자 로더 바 -->
+            <Button Command="{Binding TestRigolCommand}" 
+                    Style="{StaticResource DeviceRowButton}"
+                    ToolTip="클릭하여 전자 로더 통신 진단">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
@@ -121,7 +154,7 @@
                     <TextBlock Grid.Column="1" Text="전자 로더" FontSize="13" FontWeight="Bold" Foreground="#0F172A" VerticalAlignment="Center"/>
 
                     <!-- 통신 판정 뱃지 -->
-                    <Border Grid.Column="2" CornerRadius="4" Padding="12,4" VerticalAlignment="Center">
+                    <Border Grid.Column="2" CornerRadius="4" Padding="12,4" VerticalAlignment="Center" MinWidth="54">
                         <Border.Style>
                             <Style TargetType="Border">
                                 <Setter Property="Background" Value="#F1F5F9"/>
@@ -135,7 +168,7 @@
                                 </Style.Triggers>
                             </Style>
                         </Border.Style>
-                        <TextBlock Text="{Binding RigolStatus, FallbackValue='대기'}" FontWeight="Black" FontSize="11">
+                        <TextBlock Text="{Binding RigolStatus, FallbackValue='대기'}" FontWeight="Black" FontSize="11" HorizontalAlignment="Center">
                             <TextBlock.Style>
                                 <Style TargetType="TextBlock">
                                     <Setter Property="Foreground" Value="#64748B"/>
@@ -152,10 +185,12 @@
                         </TextBlock>
                     </Border>
                 </Grid>
-            </Border>
+            </Button>
 
-            <!-- [3] 485 릴레이 -->
-            <Border Style="{StaticResource DeviceRowCard}">
+            <!-- [3] 릴레이 보드 바 -->
+            <Button Command="{Binding TestRelayCommand}" 
+                    Style="{StaticResource DeviceRowButton}"
+                    ToolTip="클릭하여 릴레이 보드 통신 진단">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
@@ -167,7 +202,7 @@
                     <TextBlock Grid.Column="1" Text="릴레이 보드" FontSize="13" FontWeight="Bold" Foreground="#0F172A" VerticalAlignment="Center"/>
 
                     <!-- 통신 판정 뱃지 -->
-                    <Border Grid.Column="2" CornerRadius="4" Padding="12,4" VerticalAlignment="Center">
+                    <Border Grid.Column="2" CornerRadius="4" Padding="12,4" VerticalAlignment="Center" MinWidth="54">
                         <Border.Style>
                             <Style TargetType="Border">
                                 <Setter Property="Background" Value="#F1F5F9"/>
@@ -181,7 +216,7 @@
                                 </Style.Triggers>
                             </Style>
                         </Border.Style>
-                        <TextBlock Text="{Binding RelayStatus, FallbackValue='대기'}" FontWeight="Black" FontSize="11">
+                        <TextBlock Text="{Binding RelayStatus, FallbackValue='대기'}" FontWeight="Black" FontSize="11" HorizontalAlignment="Center">
                             <TextBlock.Style>
                                 <Style TargetType="TextBlock">
                                     <Setter Property="Foreground" Value="#64748B"/>
@@ -198,20 +233,23 @@
                         </TextBlock>
                     </Border>
                 </Grid>
-            </Border>
+            </Button>
         </StackPanel>
 
-        <!-- 2. 하단 버튼 바 -->
+        <!-- 2. 하단 전체 확인 및 닫기 버튼 바 -->
         <Grid Grid.Row="2" Margin="0,8,0,0">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                <Button Command="{Binding RunAllSelfTestCommand}" Style="{StaticResource ActionButton}" 
+                <!-- 전체 일괄 진단 버튼 -->
+                <Button Command="{Binding RunAllSelfTestCommand}" 
+                        Style="{StaticResource ActionButton}" 
                         Background="#2563EB" Foreground="White" BorderBrush="#1D4ED8" Margin="0,0,8,0">
                     <StackPanel Orientation="Horizontal">
                         <iconPacks:PackIconMaterial Kind="Refresh" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                        <TextBlock Text="확인" FontSize="12" FontWeight="Bold" VerticalAlignment="Center"/>
+                        <TextBlock Text="전체 확인" FontSize="12" FontWeight="Bold" VerticalAlignment="Center"/>
                     </StackPanel>
                 </Button>
 
+                <!-- 창 닫기 버튼 -->
                 <Button Click="CloseButton_Click" Style="{StaticResource ActionButton}">
                     <TextBlock Text="닫기" FontSize="12" VerticalAlignment="Center"/>
                 </Button>

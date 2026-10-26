@@ -1,18 +1,13 @@
 ﻿<Application x:Class="ElectronicLoadTester.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:local="clr-namespace:ElectronicLoadTester">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
-                <!-- 1. MahApps 기본 컨트롤 스타일 (필수: 버튼, 토글, 텍스트박스 등) -->
+                <!-- MahApps.Metro 기본 테마 리소스들 -->
                 <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Controls.xaml" />
-
-                <!-- 2. MahApps 기본 폰트 -->
                 <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Fonts.xaml" />
-
-                <!-- 3. 테마 및 액센트 색상 (Light.Cobalt) -->
-                <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Themes/Light.Cobalt.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Themes/Light.Blue.xaml" />
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Application.Resources>

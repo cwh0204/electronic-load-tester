@@ -18,7 +18,6 @@
                  GlowBrush="#CBD5E1">
 
     <mah:MetroWindow.Resources>
-        <!-- 불리언-가시성 표준 변환기 -->
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
 
         <!-- 순백색 모던 카드 스타일 -->
@@ -41,22 +40,45 @@
             <Setter Property="FontWeight" Value="SemiBold"/>
         </Style>
 
-        <!-- 세그먼트 라디오버튼 (TCMS/SIV/CI 및 레일 선택 공용) -->
+        <!-- [수정] 세그먼트 라디오버튼 (비활성화 시 세련된 회색 락 스타일 완벽 적용) -->
         <Style x:Key="TargetSegmentButton" TargetType="RadioButton">
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="Foreground" Value="#64748B"/>
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Padding" Value="10,6"/>
+            <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="RadioButton">
-                        <Border x:Name="bg" Background="{TemplateBinding Background}" CornerRadius="6" Padding="12,7" Margin="2">
+                        <Border x:Name="bg" Background="{TemplateBinding Background}" CornerRadius="6" Padding="{TemplateBinding Padding}" Margin="2">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
+                            <!-- 1. 활성 상태 마우스 오버 -->
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsMouseOver" Value="True"/>
+                                    <Condition Property="IsChecked" Value="False"/>
+                                    <Condition Property="IsEnabled" Value="True"/>
+                                </MultiTrigger.Conditions>
+                                <Setter TargetName="bg" Property="Background" Value="#E2E8F0"/>
+                                <Setter Property="Foreground" Value="#0F172A"/>
+                            </MultiTrigger>
+
+                            <!-- 2. 선택됨 (Checked) -->
                             <Trigger Property="IsChecked" Value="True">
                                 <Setter TargetName="bg" Property="Background" Value="#2563EB"/>
                                 <Setter Property="Foreground" Value="#FFFFFF"/>
+                            </Trigger>
+
+                            <!-- 3. [핵심] 비활성화 상태: 미지원 레일 은은한 회색 잠금 & 금지 커서 -->
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="bg" Property="Background" Value="#E2E8F0"/>
+                                <Setter Property="Foreground" Value="#94A3B8"/>
+                                <Setter Property="Opacity" Value="0.6"/>
+                                <Setter Property="Cursor" Value="No"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -189,11 +211,11 @@
             <Grid.ColumnDefinitions>
                 <!-- 좌측 설정/조작/계측 (410px 고정) -->
                 <ColumnDefinition Width="410"/>
-                <!-- 우측 모니터링/결과표 (전체 너비 가변) -->
+                <!-- 우측 모니터링/결과표 (가변) -->
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
-            <!-- 좌측 패널: 통합 설정 카드 + 시작/정지 제어 + 실시간 계측 모니터 -->
+            <!-- 좌측 패널 -->
             <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto" Margin="0,0,16,0">
                 <StackPanel>
 
@@ -219,53 +241,126 @@
                             </Grid>
                             <Border Background="#F1F5F9" CornerRadius="8" Padding="3" BorderBrush="#E2E8F0" BorderThickness="1" Margin="0,0,0,14">
                                 <UniformGrid Columns="3">
-                                    <RadioButton Content="5V" GroupName="RailSelectGroup" IsChecked="{Binding Is5VSelected}" Style="{StaticResource TargetSegmentButton}"/>
-                                    <RadioButton Content="24V" GroupName="RailSelectGroup" IsChecked="{Binding Is24VSelected}" Style="{StaticResource TargetSegmentButton}"/>
-                                    <RadioButton Content="30V" GroupName="RailSelectGroup" IsChecked="{Binding Is30VSelected}" Style="{StaticResource TargetSegmentButton}"/>
+                                    <!-- 5V: 전 시스템 공통 활성 -->
+                                    <RadioButton Content="5V" GroupName="RailSelectGroup" 
+                                                 IsChecked="{Binding Is5VSelected}" 
+                                                 Style="{StaticResource TargetSegmentButton}"/>
+
+                                    <!-- 24V: SIV일 때 Is24VSupported=false -> 은은한 회색 비활성화 및 클릭 차단 -->
+                                    <RadioButton Content="24V" GroupName="RailSelectGroup" 
+                                                 IsChecked="{Binding Is24VSelected}" 
+                                                 IsEnabled="{Binding Is24VSupported}"
+                                                 Style="{StaticResource TargetSegmentButton}"/>
+
+                                    <!-- 30V: TCMS일 때 Is30VSupported=false -> 은은한 회색 비활성화 및 클릭 차단 -->
+                                    <RadioButton Content="30V" GroupName="RailSelectGroup" 
+                                                 IsChecked="{Binding Is30VSelected}" 
+                                                 IsEnabled="{Binding Is30VSupported}"
+                                                 Style="{StaticResource TargetSegmentButton}"/>
                                 </UniformGrid>
                             </Border>
 
-                            <!-- 3. 기준값 설정 폼 -->
                             <!-- [지속 부하 시험 그룹] -->
-                            <Border Background="#F8FAFC" BorderBrush="#E2E8F0" BorderThickness="1" CornerRadius="6" Padding="12,10" Margin="0,0,0,10">
+                            <Border Background="#F8FAFC" BorderBrush="#E2E8F0" BorderThickness="1" CornerRadius="6" Padding="12,12" Margin="0,0,0,10">
                                 <StackPanel>
-                                    <Grid Margin="0,0,0,8">
-                                        <TextBlock Text="지속 부하 시험" FontSize="11" FontWeight="Bold" Foreground="#2563EB"/>
-                                        <TextBlock Text="{Binding ActiveTestingChannelName}" FontSize="11" FontWeight="Bold" Foreground="#64748B" HorizontalAlignment="Right"/>
+                                    <!-- 1. 헤더: 타이틀 & 활성 레일 뱃지 -->
+                                    <Grid Margin="0,0,0,10">
+                                        <TextBlock Text="지속 부하 시험" FontSize="11" FontWeight="Bold" Foreground="#2563EB" VerticalAlignment="Center"/>
+                                        <Border Background="#DBEAFE" CornerRadius="4" Padding="7,2" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding ActiveTestingChannelName}" FontSize="10" FontWeight="Bold" Foreground="#1D4ED8"/>
+                                        </Border>
                                     </Grid>
 
-                                    <!-- 1행: 부하 전류 (A) & 최저 전압 (V) -->
+                                    <!-- 2. CC / CV 모드 선택 세그먼트 -->
+                                    <Border Background="#F1F5F9" CornerRadius="6" Padding="2" BorderBrush="#E2E8F0" BorderThickness="1" Margin="0,0,0,12">
+                                        <UniformGrid Columns="2">
+                                            <RadioButton Content="CC (정전류)" 
+                                                         GroupName="TestModeSelectionGroup"
+                                                         IsChecked="{Binding IsModeCc}" 
+                                                         Style="{StaticResource TargetSegmentButton}"
+                                                         Height="34" Padding="0,6"/>
+                                            <RadioButton Content="CV (정전압)" 
+                                                         GroupName="TestModeSelectionGroup"
+                                                         IsChecked="{Binding IsModeCv}" 
+                                                         Style="{StaticResource TargetSegmentButton}"
+                                                         Height="34" Padding="0,6"/>
+                                        </UniformGrid>
+                                    </Border>
+
+                                    <!-- 3. 모드별 인가 조건 및 최저 기준값 영역 -->
                                     <Grid Margin="0,0,0,8">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="10"/>
-                                            <ColumnDefinition Width="*"/>
-                                        </Grid.ColumnDefinitions>
+                                        <!-- [A] CC 모드일 때: 설정 부하 전류 (A) / 최저 전압 (V) -->
+                                        <Grid Visibility="{Binding IsModeCc, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="10"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
 
-                                        <!-- 부하 전류 (A) -->
-                                        <StackPanel Grid.Column="0">
-                                            <TextBlock Text="부하 전류 (A)" FontSize="11" Foreground="#64748B" Margin="0,0,0,4"/>
-                                            <mah:NumericUpDown Visibility="{Binding Is5VSelected, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                                               Value="{Binding Spec5V_RatedCurrent}" Minimum="0.1" Maximum="20" Interval="0.1" StringFormat="F2" Height="32"/>
-                                            <mah:NumericUpDown Visibility="{Binding Is24VSelected, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                                               Value="{Binding Spec24V_RatedCurrent}" Minimum="0.1" Maximum="20" Interval="0.1" StringFormat="F2" Height="32"/>
-                                            <mah:NumericUpDown Visibility="{Binding Is30VSelected, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                                               Value="{Binding Spec30V_RatedCurrent}" Minimum="0.1" Maximum="20" Interval="0.1" StringFormat="F2" Height="32"/>
-                                        </StackPanel>
+                                            <!-- 좌측: 설정 부하 전류 (A) -->
+                                            <StackPanel Grid.Column="0">
+                                                <TextBlock Text="설정 부하 전류 (A)" FontSize="11" Foreground="#64748B" Margin="0,0,0,4"/>
+                                                <Grid Height="32">
+                                                    <mah:NumericUpDown Visibility="{Binding Is5VSelected, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                                                       Value="{Binding Spec5V_CcCurrent, UpdateSourceTrigger=PropertyChanged}" Minimum="0.1" Maximum="20" Interval="0.1" StringFormat="F2"/>
+                                                    <mah:NumericUpDown Visibility="{Binding Is24VSelected, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                                                       Value="{Binding Spec24V_CcCurrent, UpdateSourceTrigger=PropertyChanged}" Minimum="0.1" Maximum="20" Interval="0.1" StringFormat="F2"/>
+                                                    <mah:NumericUpDown Visibility="{Binding Is30VSelected, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                                                       Value="{Binding Spec30V_CcCurrent, UpdateSourceTrigger=PropertyChanged}" Minimum="0.1" Maximum="20" Interval="0.1" StringFormat="F2"/>
+                                                </Grid>
+                                            </StackPanel>
 
-                                        <!-- 최저 전압 (V) -->
-                                        <StackPanel Grid.Column="2">
-                                            <TextBlock Text="최저 전압 (V)" FontSize="11" Foreground="#64748B" Margin="0,0,0,4"/>
-                                            <mah:NumericUpDown Visibility="{Binding Is5VSelected, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                                               Value="{Binding Spec5V_MinVoltage}" Minimum="1.0" Maximum="10" Interval="0.05" StringFormat="F2" Height="32"/>
-                                            <mah:NumericUpDown Visibility="{Binding Is24VSelected, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                                               Value="{Binding Spec24V_MinVoltage}" Minimum="10.0" Maximum="35" Interval="0.1" StringFormat="F2" Height="32"/>
-                                            <mah:NumericUpDown Visibility="{Binding Is30VSelected, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                                               Value="{Binding Spec30V_MinVoltage}" Minimum="15.0" Maximum="45" Interval="0.1" StringFormat="F2" Height="32"/>
-                                        </StackPanel>
+                                            <!-- 우측: 최저 전압 (V) -->
+                                            <StackPanel Grid.Column="2">
+                                                <TextBlock Text="최저 전압 (V)" FontSize="11" Foreground="#64748B" Margin="0,0,0,4"/>
+                                                <Grid Height="32">
+                                                    <mah:NumericUpDown Visibility="{Binding Is5VSelected, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                                                       Value="{Binding Spec5V_CcMinVolt, UpdateSourceTrigger=PropertyChanged}" Minimum="1.0" Maximum="10" Interval="0.05" StringFormat="F2"/>
+                                                    <mah:NumericUpDown Visibility="{Binding Is24VSelected, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                                                       Value="{Binding Spec24V_CcMinVolt, UpdateSourceTrigger=PropertyChanged}" Minimum="10.0" Maximum="35" Interval="0.1" StringFormat="F2"/>
+                                                    <mah:NumericUpDown Visibility="{Binding Is30VSelected, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                                                       Value="{Binding Spec30V_CcMinVolt, UpdateSourceTrigger=PropertyChanged}" Minimum="15.0" Maximum="45" Interval="0.1" StringFormat="F2"/>
+                                                </Grid>
+                                            </StackPanel>
+                                        </Grid>
+
+                                        <!-- [B] CV 모드일 때: 설정 부하 전압 (V) / 최저 전류 (A) -->
+                                        <Grid Visibility="{Binding IsModeCv, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="10"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <!-- 좌측: 설정 부하 전압 (V) -->
+                                            <StackPanel Grid.Column="0">
+                                                <TextBlock Text="설정 부하 전압 (V)" FontSize="11" Foreground="#64748B" Margin="0,0,0,4"/>
+                                                <Grid Height="32">
+                                                    <mah:NumericUpDown Visibility="{Binding Is5VSelected, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                                                       Value="{Binding Spec5V_CvVolt, UpdateSourceTrigger=PropertyChanged}" Minimum="1.0" Maximum="10" Interval="0.05" StringFormat="F2"/>
+                                                    <mah:NumericUpDown Visibility="{Binding Is24VSelected, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                                                       Value="{Binding Spec24V_CvVolt, UpdateSourceTrigger=PropertyChanged}" Minimum="10.0" Maximum="35" Interval="0.1" StringFormat="F2"/>
+                                                    <mah:NumericUpDown Visibility="{Binding Is30VSelected, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                                                       Value="{Binding Spec30V_CvVolt, UpdateSourceTrigger=PropertyChanged}" Minimum="15.0" Maximum="45" Interval="0.1" StringFormat="F2"/>
+                                                </Grid>
+                                            </StackPanel>
+
+                                            <!-- 우측: 최저 전류 (A) -->
+                                            <StackPanel Grid.Column="2">
+                                                <TextBlock Text="최저 전류 (A)" FontSize="11" Foreground="#64748B" Margin="0,0,0,4"/>
+                                                <Grid Height="32">
+                                                    <mah:NumericUpDown Visibility="{Binding Is5VSelected, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                                                       Value="{Binding Spec5V_CvMinCurrent, UpdateSourceTrigger=PropertyChanged}" Minimum="0.1" Maximum="20" Interval="0.1" StringFormat="F2"/>
+                                                    <mah:NumericUpDown Visibility="{Binding Is24VSelected, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                                                       Value="{Binding Spec24V_CvMinCurrent, UpdateSourceTrigger=PropertyChanged}" Minimum="0.1" Maximum="20" Interval="0.1" StringFormat="F2"/>
+                                                    <mah:NumericUpDown Visibility="{Binding Is30VSelected, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                                                       Value="{Binding Spec30V_CvMinCurrent, UpdateSourceTrigger=PropertyChanged}" Minimum="0.1" Maximum="20" Interval="0.1" StringFormat="F2"/>
+                                                </Grid>
+                                            </StackPanel>
+                                        </Grid>
                                     </Grid>
 
-                                    <!-- 2행: 시험 시간 (초) -->
+                                    <!-- 4. 공통 시험 시간 (초) -->
                                     <Grid>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*"/>
@@ -274,12 +369,14 @@
                                         </Grid.ColumnDefinitions>
                                         <StackPanel Grid.Column="0">
                                             <TextBlock Text="시험 시간 (초)" FontSize="11" Foreground="#64748B" Margin="0,0,0,4"/>
-                                            <mah:NumericUpDown Visibility="{Binding Is5VSelected, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                                               Value="{Binding Spec5V_EnduranceTime}" Minimum="1" Maximum="3600" Interval="1" StringFormat="F0" Height="32"/>
-                                            <mah:NumericUpDown Visibility="{Binding Is24VSelected, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                                               Value="{Binding Spec24V_EnduranceTime}" Minimum="1" Maximum="3600" Interval="1" StringFormat="F0" Height="32"/>
-                                            <mah:NumericUpDown Visibility="{Binding Is30VSelected, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                                               Value="{Binding Spec30V_EnduranceTime}" Minimum="1" Maximum="3600" Interval="1" StringFormat="F0" Height="32"/>
+                                            <Grid Height="32">
+                                                <mah:NumericUpDown Visibility="{Binding Is5VSelected, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                                                   Value="{Binding Spec5V_EnduranceTime, UpdateSourceTrigger=PropertyChanged}" Minimum="1" Maximum="3600" Interval="1" StringFormat="F0"/>
+                                                <mah:NumericUpDown Visibility="{Binding Is24VSelected, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                                                   Value="{Binding Spec24V_EnduranceTime, UpdateSourceTrigger=PropertyChanged}" Minimum="1" Maximum="3600" Interval="1" StringFormat="F0"/>
+                                                <mah:NumericUpDown Visibility="{Binding Is30VSelected, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                                                   Value="{Binding Spec30V_EnduranceTime, UpdateSourceTrigger=PropertyChanged}" Minimum="1" Maximum="3600" Interval="1" StringFormat="F0"/>
+                                            </Grid>
                                         </StackPanel>
                                     </Grid>
                                 </StackPanel>
@@ -295,15 +392,16 @@
                                             <ColumnDefinition Width="10"/>
                                             <ColumnDefinition Width="*"/>
                                         </Grid.ColumnDefinitions>
-
                                         <StackPanel Grid.Column="0">
                                             <TextBlock Text="차단 기준 (A)" FontSize="11" Foreground="#64748B" Margin="0,0,0,4"/>
-                                            <mah:NumericUpDown Visibility="{Binding Is5VSelected, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                                               Value="{Binding Spec5V_TripCurrent}" Minimum="0.5" Maximum="30" Interval="0.1" StringFormat="F2" Height="32"/>
-                                            <mah:NumericUpDown Visibility="{Binding Is24VSelected, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                                               Value="{Binding Spec24V_TripCurrent}" Minimum="0.5" Maximum="30" Interval="0.1" StringFormat="F2" Height="32"/>
-                                            <mah:NumericUpDown Visibility="{Binding Is30VSelected, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                                               Value="{Binding Spec30V_TripCurrent}" Minimum="0.5" Maximum="30" Interval="0.1" StringFormat="F2" Height="32"/>
+                                            <Grid Height="32">
+                                                <mah:NumericUpDown Visibility="{Binding Is5VSelected, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                                                   Value="{Binding Spec5V_TripCurrent, UpdateSourceTrigger=PropertyChanged}" Minimum="0.5" Maximum="30" Interval="0.1" StringFormat="F2"/>
+                                                <mah:NumericUpDown Visibility="{Binding Is24VSelected, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                                                   Value="{Binding Spec24V_TripCurrent, UpdateSourceTrigger=PropertyChanged}" Minimum="0.5" Maximum="30" Interval="0.1" StringFormat="F2"/>
+                                                <mah:NumericUpDown Visibility="{Binding Is30VSelected, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                                                   Value="{Binding Spec30V_TripCurrent, UpdateSourceTrigger=PropertyChanged}" Minimum="0.5" Maximum="30" Interval="0.1" StringFormat="F2"/>
+                                            </Grid>
                                         </StackPanel>
                                     </Grid>
                                 </StackPanel>
@@ -453,9 +551,9 @@
                 <Grid.RowDefinitions>
                     <!-- 0: 상단 판정 배너 (고정) -->
                     <RowDefinition Height="74"/>
-                    <!-- 1: 실시간 OxyPlot 그래프 (전체화면 환경에 맞춰 1.2 비율 할당) -->
+                    <!-- 1: 실시간 OxyPlot 그래프 -->
                     <RowDefinition Height="1.2*"/>
-                    <!-- 2: 결과 명세 DataGrid (1 비율 할당) -->
+                    <!-- 2: 결과 명세 DataGrid -->
                     <RowDefinition Height="1*"/>
                 </Grid.RowDefinitions>
 
