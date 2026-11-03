@@ -25,11 +25,17 @@ namespace ElectronicLoadTester
 
                     // 2. 뷰모델 등록
                     services.AddSingleton<MainViewModel>();
+
+                    services.AddTransient<ResultSearchWindow>();
+
                     services.AddTransient<SelfTestViewModel>(); // 팝업 시마다 상태 초기화
 
                     // 3. 뷰(윈도우) 등록
                     services.AddSingleton<MainWindow>();
                     services.AddTransient<SelfTestWindow>();
+
+                    services.AddSingleton<IDeviceManagerService>(DeviceManagerService.Instance);
+                    services.AddSingleton<ITestResultHistoryService, TestResultHistoryService>();
                 })
                 .Build();
         }
@@ -40,6 +46,10 @@ namespace ElectronicLoadTester
             base.OnStartup(e);
 
             await _host!.StartAsync();
+
+            // [추가] 호스트 시작 직후 SQLite DB 및 테이블 자동 초기화
+            var historyService = _host.Services.GetRequiredService<ITestResultHistoryService>();
+            await historyService.InitializeDatabaseAsync();
 
             var mainWindow = _host.Services.GetRequiredService<MainWindow>();
             mainWindow.Show();

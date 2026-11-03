@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Ports;
+using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -22,6 +24,7 @@ namespace ElectronicLoadTester.ViewModels
     public partial class MainViewModel : ObservableObject
     {
         private readonly IDeviceManagerService _deviceManager;
+        private readonly ITestResultHistoryService _historyService;
         private readonly string _settingsFilePath;
         private AppTestSettings _appSettings = new();
         private bool _isLoadingSettings = false;
@@ -79,7 +82,9 @@ namespace ElectronicLoadTester.ViewModels
             {
                 ActiveTestingChannelName = "5V 레일";
                 SaveCurrentUiToProfile();
-                _ = RequestRelaySwitchAsync("5V"); // 클릭 즉시 명시적 전달
+                UpdateStandbyResults();
+                UpdateDefaultTestIdentifier(); // [추가]
+                _ = RequestRelaySwitchAsync("5V");
             }
         }
 
@@ -89,7 +94,8 @@ namespace ElectronicLoadTester.ViewModels
             {
                 ActiveTestingChannelName = "24V 레일";
                 SaveCurrentUiToProfile();
-                _ = RequestRelaySwitchAsync("24V"); // 클릭 즉시 명시적 전달
+                UpdateStandbyResults();
+                _ = RequestRelaySwitchAsync("24V");
             }
         }
 
@@ -99,10 +105,22 @@ namespace ElectronicLoadTester.ViewModels
             {
                 ActiveTestingChannelName = "30V 레일";
                 SaveCurrentUiToProfile();
-                _ = RequestRelaySwitchAsync("30V"); // 클릭 즉시 명시적 전달
+                UpdateStandbyResults();
+                _ = RequestRelaySwitchAsync("30V");
             }
         }
         #endregion
+
+        [ObservableProperty]
+        private string _testIdentifierName = string.Empty;
+
+        // 2. [레일/시스템 변경 시 기본 시험명 자동 생성 메서드]
+        private void UpdateDefaultTestIdentifier()
+        {
+            string rail = Is30VSelected ? "30V" : (Is24VSelected ? "24V" : "5V");
+            // 사용자가 직접 특수명을 치지 않았거나 비어있을 때 기본 규격명으로 자동 제안
+            TestIdentifierName = $"{SelectedTargetSystem}_{rail}_{DateTime.Now:yyyyMMdd}";
+        }
 
         #region [시험 모드 선택: CC / CV]
         [ObservableProperty] private bool _isModeCc = true;
@@ -115,6 +133,7 @@ namespace ElectronicLoadTester.ViewModels
                 _isModeCv = false;
                 OnPropertyChanged(nameof(IsModeCv));
                 SaveCurrentUiToProfile();
+                UpdateStandbyResults();
             }
         }
 
@@ -125,6 +144,7 @@ namespace ElectronicLoadTester.ViewModels
                 _isModeCc = false;
                 OnPropertyChanged(nameof(IsModeCc));
                 SaveCurrentUiToProfile();
+                UpdateStandbyResults();
             }
         }
         #endregion
@@ -200,16 +220,17 @@ namespace ElectronicLoadTester.ViewModels
         public ObservableCollection<TestResultItem> TestResults { get; } = new();
         #endregion
 
-        public MainViewModel(IDeviceManagerService deviceManager)
+        public MainViewModel(IDeviceManagerService deviceManager, ITestResultHistoryService historyService)
         {
             _deviceManager = deviceManager;
+            _historyService = historyService;
             _settingsFilePath = Path.Combine(AppContext.BaseDirectory, "test_spec_config.json");
 
             InitializeOxyPlot();
             RefreshComPorts();
-            InitializeSampleResults();
 
             LoadSettings();
+            UpdateStandbyResults();
 
             if (!string.IsNullOrEmpty(_deviceManager.RelayPortName))
             {
@@ -217,7 +238,9 @@ namespace ElectronicLoadTester.ViewModels
             }
         }
 
-        public MainViewModel() : this(DeviceManagerService.Instance)
+        public MainViewModel() : this(
+            App.Services.GetRequiredService<IDeviceManagerService>(),
+            App.Services.GetRequiredService<ITestResultHistoryService>())
         {
         }
 
@@ -226,7 +249,6 @@ namespace ElectronicLoadTester.ViewModels
         {
             if (_isLoadingSettings) return;
 
-            // 이미 스위칭 통신이 진행 중이면 최신 목표로 예약하고 리턴 (이벤트 증발 방지)
             if (_isRelaySwitching)
             {
                 _pendingRailSwitch = targetRail;
@@ -243,8 +265,6 @@ namespace ElectronicLoadTester.ViewModels
                 while (true)
                 {
                     string system = SelectedTargetSystem;
-
-                    // 릴레이 보드로 직접 선택된 시스템과 레일 명령 전송
                     bool success = await _deviceManager.ConnectTargetRailRelayAsync(system, railToSwitch);
 
                     if (success)
@@ -256,12 +276,11 @@ namespace ElectronicLoadTester.ViewModels
                         StatusMessage = $"[안내] {system} {railToSwitch} 레일은 지원하지 않습니다. (릴레이 차단)";
                     }
 
-                    // 통신 도중 사용자가 누른 더 최신 요청이 들어왔는지 확인
                     if (_pendingRailSwitch != null && _pendingRailSwitch != railToSwitch)
                     {
                         railToSwitch = _pendingRailSwitch;
                         _pendingRailSwitch = null;
-                        continue; // 최신 요청으로 즉시 다시 스위칭
+                        continue;
                     }
 
                     break;
@@ -304,12 +323,9 @@ namespace ElectronicLoadTester.ViewModels
                 if (SelectedTargetSystem == "TCMS" && lastRail == "30V") lastRail = "5V";
                 if (SelectedTargetSystem == "SIV" && lastRail == "24V") lastRail = "5V";
 
-                _is5VSelected = (lastRail == "5V");
-                _is24VSelected = (lastRail == "24V");
-                _is30VSelected = (lastRail == "30V");
-                OnPropertyChanged(nameof(Is5VSelected));
-                OnPropertyChanged(nameof(Is24VSelected));
-                OnPropertyChanged(nameof(Is30VSelected));
+                Is5VSelected = (lastRail == "5V");
+                Is24VSelected = (lastRail == "24V");
+                Is30VSelected = (lastRail == "30V");
 
                 ActiveTestingChannelName = $"{lastRail} 레일";
 
@@ -431,24 +447,21 @@ namespace ElectronicLoadTester.ViewModels
             _isLoadingSettings = true;
             if (systemName == "TCMS" && Is30VSelected)
             {
-                _is5VSelected = true;
-                _is30VSelected = false;
-                OnPropertyChanged(nameof(Is5VSelected));
-                OnPropertyChanged(nameof(Is30VSelected));
+                Is5VSelected = true;
+                Is30VSelected = false;
                 ActiveTestingChannelName = "5V 레일";
             }
             else if (systemName == "SIV" && Is24VSelected)
             {
-                _is5VSelected = true;
-                _is24VSelected = false;
-                OnPropertyChanged(nameof(Is5VSelected));
-                OnPropertyChanged(nameof(Is24VSelected));
+                Is5VSelected = true;
+                Is24VSelected = false;
                 ActiveTestingChannelName = "5V 레일";
             }
             _isLoadingSettings = false;
 
             LoadProfileToUi(GetProfileBySystem(systemName));
             SaveCurrentUiToProfile();
+            UpdateStandbyResults();
 
             string currentRail = Is30VSelected ? "30V" : (Is24VSelected ? "24V" : "5V");
             _ = RequestRelaySwitchAsync(currentRail);
@@ -623,7 +636,8 @@ namespace ElectronicLoadTester.ViewModels
         {
             try
             {
-                var searchWin = new ResultSearchWindow { Owner = Application.Current.MainWindow };
+                var searchWin = App.Services.GetRequiredService<ResultSearchWindow>();
+                searchWin.Owner = Application.Current.MainWindow;
                 searchWin.ShowDialog();
             }
             catch (Exception ex)
@@ -698,7 +712,7 @@ namespace ElectronicLoadTester.ViewModels
         private void CloseSettings(Window? window) => window?.Close();
         #endregion
 
-        #region [검사 시퀀스 제어]
+        #region [검사 시퀀스 제어 (DB 자동 저장 연동)]
         [RelayCommand]
         private async Task StartSequenceAsync()
         {
@@ -809,7 +823,7 @@ namespace ElectronicLoadTester.ViewModels
                 {
                     await _deviceManager.SetMain100VRelayAsync(false);
                     await _deviceManager.ResetAllRelaysAsync();
-                    FinishSequence(false);
+                    await FinishSequenceAsync(false);
                     return;
                 }
 
@@ -864,7 +878,7 @@ namespace ElectronicLoadTester.ViewModels
                 LivePowerVoltage = 0.0;
                 LivePowerCurrent = 0.0;
 
-                FinishSequence(tripPass);
+                await FinishSequenceAsync(tripPass);
             }
             catch (OperationCanceledException)
             {
@@ -879,7 +893,7 @@ namespace ElectronicLoadTester.ViewModels
             }
         }
 
-        private void FinishSequence(bool isAllPassed)
+        private async Task FinishSequenceAsync(bool isAllPassed)
         {
             SequenceProgressPercent = 100;
             TotalTestedCount++;
@@ -897,6 +911,84 @@ namespace ElectronicLoadTester.ViewModels
                 FinalTestVerdict = "FAIL";
                 CurrentStepDescription = "검사 불합격 (기준 규격 미달)";
                 StatusMessage = $"{ActiveTestingChannelName} 검사 결과 불합격(FAIL) 판정되었습니다.";
+            }
+
+            // 검사 종료 시 SQLite DB로 영구 저장 실행
+            await SaveCurrentTestToDbAsync(isAllPassed);
+        }
+
+        private async Task SaveCurrentTestToDbAsync(bool isAllPassed)
+        {
+            try
+            {
+                string railName = Is30VSelected ? "30V" : (Is24VSelected ? "24V" : "5V");
+                string system = SelectedTargetSystem;
+                string testMode = IsModeCc ? "CC" : "CV";
+
+                // 사용자가 화면 상단 TextBox에 입력한 시험명/시리얼을 우선 사용, 비어있으면 자동 채번
+                string finalSn;
+                if (!string.IsNullOrWhiteSpace(TestIdentifierName))
+                {
+                    // 사용자가 입력한 식별자 뒤에 일련번호 붙이기
+                    finalSn = TestIdentifierName.Trim();
+                }
+                else
+                {
+                    finalSn = await _historyService.GenerateNextSerialNumberAsync(system, railName);
+                }
+
+                // 그래프 파형 JSON 추출
+                var chartPoints = new List<ChartPointDto>();
+                for (int i = 0; i < _voltageSeries.Points.Count; i++)
+                {
+                    chartPoints.Add(new ChartPointDto(
+                        _voltageSeries.Points[i].X,
+                        _voltageSeries.Points[i].Y,
+                        _currentSeries.Points.Count > i ? _currentSeries.Points[i].Y : 0.0
+                    ));
+                }
+                string trendJson = JsonSerializer.Serialize(chartPoints);
+
+                // 마스터 레코드 구성
+                var master = new TestMasterEntity
+                {
+                    SerialNumber = finalSn,
+                    TargetSystem = system,
+                    RailName = railName,
+                    TestMode = testMode,
+                    FinalVerdict = isAllPassed ? "PASS" : "FAIL",
+                    TotalTestedCount = TestResults.Count,
+                    PassCount = TestResults.Count(r => r.Result == "PASS"),
+                    FailCount = TestResults.Count(r => r.Result == "FAIL"),
+                    TestedAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
+                    TrendDataJson = trendJson,
+                    Notes = isAllPassed ? "정상 통과" : "기준 규격 미달"
+                };
+
+                // 디테일 스텝 매핑
+                var detailEntities = TestResults.Select(r => new TestStepDetailEntity
+                {
+                    StepNo = r.StepNo,
+                    StepName = r.StepName,
+                    Mode = r.Mode,
+                    TargetCondition = r.TargetCondition,
+                    SpecRange = r.SpecRange,
+                    MeasuredVoltage = r.MeasuredVoltage,
+                    MeasuredCurrent = r.MeasuredCurrent,
+                    Result = r.Result,
+                    ExecutedAt = r.Timestamp
+                });
+
+                // DB 트랜잭션 저장 실행
+                await _historyService.SaveTestResultAsync(master, detailEntities);
+                StatusMessage = $"{system} {railName} 검사 완료 및 저장 완료 (S/N: {finalSn})";
+
+                // 다음 검사를 위해 시험명 뒤 순번 또는 날짜 자동 갱신
+                UpdateDefaultTestIdentifier();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[DB 저장 실패] {ex.Message}");
             }
         }
 
@@ -916,30 +1008,52 @@ namespace ElectronicLoadTester.ViewModels
         }
         #endregion
 
-        #region [초기 샘플 데이터]
-        private void InitializeSampleResults()
+        #region [대기 상태 표 실시간 동기화]
+        private void UpdateStandbyResults()
         {
+            if (FinalTestVerdict == "TESTING") return;
+
+            string railName = Is30VSelected ? "30V" : (Is24VSelected ? "24V" : "5V");
+            string testMode = IsModeCc ? "CC" : "CV";
+
+            double enduranceTime = Is5VSelected ? Spec5V_EnduranceTime : (Is24VSelected ? Spec24V_EnduranceTime : Spec30V_EnduranceTime);
+            double tripCurr = Is5VSelected ? Spec5V_TripCurrent : (Is24VSelected ? Spec24V_TripCurrent : Spec30V_TripCurrent);
+
+            double targetConditionVal = IsModeCc
+                ? (Is5VSelected ? Spec5V_CcCurrent : (Is24VSelected ? Spec24V_CcCurrent : Spec30V_CcCurrent))
+                : (Is5VSelected ? Spec5V_CvVolt : (Is24VSelected ? Spec24V_CvVolt : Spec30V_CvVolt));
+
+            double specLimitVal = IsModeCc
+                ? (Is5VSelected ? Spec5V_CcMinVolt : (Is24VSelected ? Spec24V_CcMinVolt : Spec30V_CcMinVolt))
+                : (Is5VSelected ? Spec5V_CvMinCurrent : (Is24VSelected ? Spec24V_CvMinCurrent : Spec30V_CvMinCurrent));
+
+            string conditionText = IsModeCc ? $"{targetConditionVal:F2} A ({enduranceTime:F0}s)" : $"{targetConditionVal:F2} V ({enduranceTime:F0}s)";
+            string specRangeText = IsModeCc ? $"Min {specLimitVal:F2} V" : $"Min {specLimitVal:F2} A";
+
+            TestResults.Clear();
+
             TestResults.Add(new TestResultItem
             {
                 StepNo = 1,
-                ChannelName = "5V",
-                StepName = "5V 지속 부하 시험 (CC)",
-                Mode = "CC",
-                TargetCondition = "2.00 A (5s)",
-                SpecRange = "Min 4.75 V",
+                ChannelName = railName,
+                StepName = $"{railName} 지속 부하 시험 ({testMode})",
+                Mode = testMode,
+                TargetCondition = conditionText,
+                SpecRange = specRangeText,
                 MeasuredVoltage = 0.0,
                 MeasuredCurrent = 0.0,
                 Result = "WAIT",
                 Timestamp = "-"
             });
+
             TestResults.Add(new TestResultItem
             {
                 StepNo = 2,
-                ChannelName = "5V",
-                StepName = "5V 과전류 차단 시험",
+                ChannelName = railName,
+                StepName = $"{railName} 과전류 차단 시험",
                 Mode = "CC",
                 TargetCondition = "트립 점검",
-                SpecRange = "Trip @ ~3.00 A",
+                SpecRange = $"Trip @ ~{tripCurr:F2} A",
                 MeasuredVoltage = 0.0,
                 MeasuredCurrent = 0.0,
                 Result = "WAIT",
