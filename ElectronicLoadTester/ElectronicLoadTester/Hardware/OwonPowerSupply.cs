@@ -7,7 +7,8 @@ using System.Threading.Tasks;
 namespace ElectronicLoadTester.Hardware
 {
     /// <summary>
-    /// OWON SPE 시리즈 파워서플라이 제어 드라이버 (SCPI 텍스트 통신 기반)
+    /// 
+    /// SPE 시리즈 파워서플라이 제어 드라이버 (SCPI 텍스트 통신 기반)
     /// </summary>
     public class OwonPowerSupply : IPowerSupply
     {
@@ -15,7 +16,7 @@ namespace ElectronicLoadTester.Hardware
         private readonly SemaphoreSlim _syncLock = new(1, 1);
         private bool _disposed;
 
-        public string DeviceName => "OWON SPE Power Supply (SCPI)";
+        public string DeviceName => "SPE Power Supply (SCPI)";
         public bool IsConnected => _serialPort?.IsOpen ?? false;
         public bool IsOutputOn { get; private set; }
 

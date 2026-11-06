@@ -206,21 +206,25 @@
                             <TextBlock Text="{Binding SelectedMaster.SerialNumber, StringFormat='{} - [{0}]'}" FontSize="11" FontWeight="Bold" Foreground="#2563EB"/>
                         </StackPanel>
 
+                        <!-- ResultSearchWindow.xaml 우측 상단 세부 스텝 표 -->
                         <DataGrid Grid.Row="1" ItemsSource="{Binding SelectedMasterSteps}"
-                                  AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False"
-                                  Background="#FFFFFF" BorderThickness="0" HeadersVisibility="Column"
-                                  GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="#E2E8F0"
-                                  RowHeight="32" FontSize="11">
+          SelectedItem="{Binding SelectedStep}"
+          AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False"
+          SelectionMode="Single"
+          Background="#FFFFFF" BorderThickness="0" HeadersVisibility="Column"
+          GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="#E2E8F0"
+          RowHeight="32" FontSize="11"
+          HorizontalScrollBarVisibility="Auto">
 
                             <DataGrid.Columns>
-                                <DataGridTextColumn Header="스텝" Binding="{Binding StepNo}" Width="50"/>
+                                <DataGridTextColumn Header="스텝" Binding="{Binding StepNo}" Width="45"/>
                                 <DataGridTextColumn Header="검사 항목" Binding="{Binding StepName}" Width="150"/>
-                                <DataGridTextColumn Header="모드" Binding="{Binding Mode}" Width="55"/>
-                                <DataGridTextColumn Header="인가 조건" Binding="{Binding TargetCondition}" Width="110"/>
-                                <DataGridTextColumn Header="판정 기준" Binding="{Binding SpecRange}" Width="120"/>
-                                <DataGridTextColumn Header="측정 전압" Binding="{Binding MeasuredVoltage, StringFormat='{}{0:F3} V'}" Width="100"/>
-                                <DataGridTextColumn Header="측정 전류" Binding="{Binding MeasuredCurrent, StringFormat='{}{0:F3} A'}" Width="100"/>
-                                <DataGridTextColumn Header="판정" Binding="{Binding Result}" Width="70"/>
+                                <DataGridTextColumn Header="모드" Binding="{Binding Mode}" Width="50"/>
+                                <DataGridTextColumn Header="인가 조건" Binding="{Binding TargetCondition}" Width="105"/>
+                                <DataGridTextColumn Header="판정 기준" Binding="{Binding SpecRange}" Width="105"/>
+                                <DataGridTextColumn Header="측정 전압" Binding="{Binding MeasuredVoltage, StringFormat='{}{0:F3} V'}" Width="85"/>
+                                <DataGridTextColumn Header="측정 전류" Binding="{Binding MeasuredCurrent, StringFormat='{}{0:F3} A'}" Width="85"/>
+                                <DataGridTextColumn Header="판정" Binding="{Binding Result}" Width="55"/>
                                 <DataGridTextColumn Header="수행 시각" Binding="{Binding ExecutedAt}" Width="*"/>
                             </DataGrid.Columns>
                         </DataGrid>

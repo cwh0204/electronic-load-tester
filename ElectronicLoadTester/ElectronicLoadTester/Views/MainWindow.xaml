@@ -7,12 +7,12 @@
                  xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
                  xmlns:oxy="http://oxyplot.org/wpf"
                  mc:Ignorable="d"
-                 Title="철도차량 전원공급 모듈 검사 벤치 시스템" 
+                 Title="철도차량 전원공급 모듈 자동 검사 벤치 시스템" 
                  WindowState="Maximized"
                  WindowStartupLocation="CenterScreen"
-                 MinHeight="800" MinWidth="1200"
+                 MinHeight="850" MinWidth="1280"
                  d:DesignHeight="940" d:DesignWidth="1500"
-                 Background="#F8FAFC"
+                 Background="#F1F5F9"
                  Foreground="#0F172A"
                  FontFamily="Segoe UI, Malgun Gothic"
                  GlowBrush="#CBD5E1">
@@ -20,59 +20,46 @@
     <mah:MetroWindow.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
 
-        <!-- 순백색 모던 카드 스타일 -->
+        <!-- 모던 엔터프라이즈 카드 스타일 -->
         <Style x:Key="WhiteCard" TargetType="Border">
             <Setter Property="Background" Value="#FFFFFF"/>
             <Setter Property="BorderBrush" Value="#E2E8F0"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="CornerRadius" Value="8"/>
-            <Setter Property="Padding" Value="14"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Padding" Value="16"/>
         </Style>
 
-        <!-- 정갈한 아웃라인 버튼 -->
+        <!-- 섹션 라벨 스타일 -->
+        <Style x:Key="SectionLabel" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="#475569"/>
+            <Setter Property="Margin" Value="2,0,0,6"/>
+        </Style>
+
+        <!-- 상단 네비게이션 아웃라인 버튼 -->
         <Style x:Key="OutlineButton" TargetType="Button" BasedOn="{StaticResource MahApps.Styles.Button.Square}">
             <Setter Property="Background" Value="#FFFFFF"/>
             <Setter Property="Foreground" Value="#334155"/>
             <Setter Property="BorderBrush" Value="#CBD5E1"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Height" Value="34"/>
-            <Setter Property="Padding" Value="10,0"/>
+            <Setter Property="Padding" Value="12,0"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
-        </Style>
-
-        <!-- [추가] 검사 시작 버튼 스타일 (파란색 + 마우스오버 시 짙은 파랑) -->
-        <Style x:Key="PrimaryActionButton" TargetType="Button">
-            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
-            <Setter Property="Background" Value="#2563EB"/>
-            <Setter Property="Foreground" Value="#FFFFFF"/>
-            <Setter Property="BorderBrush" Value="#1D4ED8"/>
-            <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="border" 
-                        Background="{TemplateBinding Background}" 
-                        BorderBrush="{TemplateBinding BorderBrush}" 
-                        BorderThickness="{TemplateBinding BorderThickness}" 
-                        CornerRadius="6">
+                        <Border x:Name="border" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6" Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
-                            <!-- 마우스 오버 시 짙은 블루 -->
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="#1D4ED8"/>
-                                <Setter TargetName="border" Property="BorderBrush" Value="#1E40AF"/>
+                                <Setter TargetName="border" Property="Background" Value="#F8FAFC"/>
+                                <Setter TargetName="border" Property="BorderBrush" Value="#94A3B8"/>
                             </Trigger>
-                            <!-- 클릭 시 더 짙은 블루 -->
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="#1E40AF"/>
-                            </Trigger>
-                            <!-- 비활성화 상태 -->
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter TargetName="border" Property="Background" Value="#94A3B8"/>
-                                <Setter Property="Foreground" Value="#F1F5F9"/>
-                                <Setter Property="Cursor" Value="No"/>
+                                <Setter TargetName="border" Property="Background" Value="#E2E8F0"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -80,54 +67,14 @@
             </Setter>
         </Style>
 
-        <!-- [추가] 긴급 정지 버튼 스타일 (빨간색 + 마우스오버 시 짙은 빨강) -->
-        <Style x:Key="DangerActionButton" TargetType="Button">
-            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
-            <Setter Property="Background" Value="#DC2626"/>
-            <Setter Property="Foreground" Value="#FFFFFF"/>
-            <Setter Property="BorderBrush" Value="#B91C1C"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="border" 
-                        Background="{TemplateBinding Background}" 
-                        BorderBrush="{TemplateBinding BorderBrush}" 
-                        BorderThickness="{TemplateBinding BorderThickness}" 
-                        CornerRadius="6">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <!-- 마우스 오버 시 짙은 레드 (회색으로 빠지지 않음) -->
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="#B91C1C"/>
-                                <Setter TargetName="border" Property="BorderBrush" Value="#991B1B"/>
-                            </Trigger>
-                            <!-- 클릭 시 더 짙은 레드 -->
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="#991B1B"/>
-                            </Trigger>
-                            <!-- 비활성화 상태 -->
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter TargetName="border" Property="Background" Value="#FDA4AF"/>
-                                <Setter Property="Foreground" Value="#FFFFFF"/>
-                                <Setter Property="Cursor" Value="No"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <!-- [수정] 세그먼트 라디오버튼 (비활성화 시 세련된 회색 락 스타일 완벽 적용) -->
+        <!-- 세그먼트 라디오버튼 (모던 탭 컨트롤 룩) -->
         <Style x:Key="TargetSegmentButton" TargetType="RadioButton">
             <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="Foreground" Value="#64748B"/>
-            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontSize" Value="11.5"/>
             <Setter Property="FontWeight" Value="Bold"/>
-            <Setter Property="Padding" Value="10,6"/>
+            <Setter Property="Padding" Value="6,4"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
@@ -136,7 +83,6 @@
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
-                            <!-- 1. 활성 상태 마우스 오버 -->
                             <MultiTrigger>
                                 <MultiTrigger.Conditions>
                                     <Condition Property="IsMouseOver" Value="True"/>
@@ -146,18 +92,13 @@
                                 <Setter TargetName="bg" Property="Background" Value="#E2E8F0"/>
                                 <Setter Property="Foreground" Value="#0F172A"/>
                             </MultiTrigger>
-
-                            <!-- 2. 선택됨 (Checked) -->
                             <Trigger Property="IsChecked" Value="True">
                                 <Setter TargetName="bg" Property="Background" Value="#2563EB"/>
                                 <Setter Property="Foreground" Value="#FFFFFF"/>
                             </Trigger>
-
-                            <!-- 3. [핵심] 비활성화 상태: 미지원 레일 은은한 회색 잠금 & 금지 커서 -->
                             <Trigger Property="IsEnabled" Value="False">
-                                <Setter TargetName="bg" Property="Background" Value="#E2E8F0"/>
-                                <Setter Property="Foreground" Value="#94A3B8"/>
-                                <Setter Property="Opacity" Value="0.6"/>
+                                <Setter TargetName="bg" Property="Background" Value="Transparent"/>
+                                <Setter Property="Foreground" Value="#CBD5E1"/>
                                 <Setter Property="Cursor" Value="No"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
@@ -165,20 +106,34 @@
                 </Setter.Value>
             </Setter>
         </Style>
+
+        <!-- 모던 DataGrid 컬럼 헤더 스타일 -->
+        <Style x:Key="ModernColumnHeader" TargetType="DataGridColumnHeader">
+            <Setter Property="Background" Value="#F8FAFC"/>
+            <Setter Property="Foreground" Value="#475569"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="Height" Value="36"/>
+            <Setter Property="Padding" Value="10,0"/>
+            <Setter Property="BorderBrush" Value="#E2E8F0"/>
+            <Setter Property="BorderThickness" Value="0,0,0,1"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+        </Style>
     </mah:MetroWindow.Resources>
 
     <Grid>
         <Grid.RowDefinitions>
             <!-- 0: 상단 공통 헤더 바 -->
-            <RowDefinition Height="64"/>
+            <RowDefinition Height="60"/>
             <!-- 1: 메인 대시보드 워크스페이스 -->
             <RowDefinition Height="*"/>
             <!-- 2: 하단 슬림 상태바 -->
-            <RowDefinition Height="30"/>
+            <RowDefinition Height="32"/>
         </Grid.RowDefinitions>
 
         <!-- ================= 0. 상단 공통 헤더 바 ================= -->
-        <Border Grid.Row="0" Background="#FFFFFF" BorderBrush="#E2E8F0" BorderThickness="0,0,0,1" Padding="20,0">
+        <Border Grid.Row="0" Background="#FFFFFF" BorderBrush="#E2E8F0" BorderThickness="0,0,0,1" Padding="24,0">
             <Grid VerticalAlignment="Center">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
@@ -186,486 +141,443 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <!-- 좌측 타이틀 -->
+                <!-- 브랜드 타이틀 -->
                 <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                    <iconPacks:PackIconMaterial Kind="Flash" Width="22" Height="22" Foreground="#2563EB" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                    <TextBlock Text="POWER BENCH TESTER" FontSize="16" FontWeight="Black" Foreground="#0F172A" VerticalAlignment="Center"/>
+                    <Border Background="#EFF6FF" BorderBrush="#BFDBFE" BorderThickness="1" Width="32" Height="32" CornerRadius="8" Margin="0,0,10,0">
+                        <iconPacks:PackIconMaterial Kind="Flash" Width="16" Height="16" Foreground="#2563EB" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="POWER BENCH TESTER" FontSize="14" FontWeight="Black" Foreground="#0F172A"/>
+                        <TextBlock Text="Railway Power Supply Automated Test System" FontSize="9.5" FontWeight="SemiBold" Foreground="#64748B" Margin="0,-1,0,0"/>
+                    </StackPanel>
                 </StackPanel>
 
-                <!-- 상단 우측: 장비 연결 상태 + 도구 버튼 -->
+                <!-- 하드웨어 연결 상태 칩 & 유틸리티 메뉴 -->
                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
-                    <!-- 1. 파워 연결 칩 -->
-                    <Border Background="#F1F5F9" BorderBrush="#E2E8F0" BorderThickness="1" CornerRadius="14" Height="28" Padding="10,0" Margin="0,0,6,0">
-                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                            <Ellipse Width="8" Height="8" VerticalAlignment="Center" Margin="0,0,6,0">
-                                <Ellipse.Style>
-                                    <Style TargetType="Ellipse">
-                                        <Setter Property="Fill" Value="#94A3B8"/>
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding IsPowerConnected}" Value="True">
-                                                <Setter Property="Fill" Value="#10B981"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Ellipse.Style>
-                            </Ellipse>
-                            <TextBlock Text="OWON 파워" FontSize="11" FontWeight="SemiBold" Foreground="#334155" VerticalAlignment="Center" Margin="0,1,0,0"/>
-                        </StackPanel>
-                    </Border>
-
-                    <!-- 2. 부하기 연결 칩 -->
-                    <Border Background="#F1F5F9" BorderBrush="#E2E8F0" BorderThickness="1" CornerRadius="14" Height="28" Padding="10,0" Margin="0,0,6,0">
-                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                            <Ellipse Width="8" Height="8" VerticalAlignment="Center" Margin="0,0,6,0">
-                                <Ellipse.Style>
-                                    <Style TargetType="Ellipse">
-                                        <Setter Property="Fill" Value="#94A3B8"/>
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding IsLoadConnected}" Value="True">
-                                                <Setter Property="Fill" Value="#10B981"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Ellipse.Style>
-                            </Ellipse>
-                            <TextBlock Text="Rigol 부하" FontSize="11" FontWeight="SemiBold" Foreground="#334155" VerticalAlignment="Center" Margin="0,1,0,0"/>
-                        </StackPanel>
-                    </Border>
-
-                    <!-- 3. 릴레이 연결 칩 -->
-                    <Border Background="#F1F5F9" BorderBrush="#E2E8F0" BorderThickness="1" CornerRadius="14" Height="28" Padding="10,0" Margin="0,0,12,0">
-                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                            <Ellipse Width="8" Height="8" VerticalAlignment="Center" Margin="0,0,6,0">
-                                <Ellipse.Style>
-                                    <Style TargetType="Ellipse">
-                                        <Setter Property="Fill" Value="#94A3B8"/>
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding IsRelayConnected}" Value="True">
-                                                <Setter Property="Fill" Value="#10B981"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Ellipse.Style>
-                            </Ellipse>
-                            <TextBlock Text="485 릴레이" FontSize="11" FontWeight="SemiBold" Foreground="#334155" VerticalAlignment="Center" Margin="0,1,0,0"/>
-                        </StackPanel>
-                    </Border>
-
-                    <!-- 장비 스캔 버튼 -->
-                    <Button Command="{Binding ScanAndConnectAllCommand}" Style="{StaticResource OutlineButton}" Height="34" Margin="0,0,6,0">
+                    <!-- 장비 상태 인디케이터 그룹 -->
+                    <Border Background="#F8FAFC" BorderBrush="#E2E8F0" BorderThickness="1" CornerRadius="8" Padding="6,4" Margin="0,0,14,0">
                         <StackPanel Orientation="Horizontal">
-                            <iconPacks:PackIconMaterial Kind="Radar" VerticalAlignment="Center" Margin="0,0,6,0" Foreground="#2563EB"/>
+                            <!-- 파워 칩 -->
+                            <Border Padding="8,2" Margin="0,0,4,0">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Ellipse Width="8" Height="8" VerticalAlignment="Center" Margin="0,0,6,0">
+                                        <Ellipse.Style>
+                                            <Style TargetType="Ellipse">
+                                                <Setter Property="Fill" Value="#CBD5E1"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsPowerConnected}" Value="True">
+                                                        <Setter Property="Fill" Value="#10B981"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Ellipse.Style>
+                                    </Ellipse>
+                                    <TextBlock Text="파워" FontSize="11" FontWeight="Bold" Foreground="#334155" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Width="1" Background="#E2E8F0" Margin="2,2"/>
+
+                            <!-- 부하기 칩 -->
+                            <Border Padding="8,2" Margin="0,0,4,0">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Ellipse Width="8" Height="8" VerticalAlignment="Center" Margin="0,0,6,0">
+                                        <Ellipse.Style>
+                                            <Style TargetType="Ellipse">
+                                                <Setter Property="Fill" Value="#CBD5E1"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsLoadConnected}" Value="True">
+                                                        <Setter Property="Fill" Value="#10B981"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Ellipse.Style>
+                                    </Ellipse>
+                                    <TextBlock Text="전자로더" FontSize="11" FontWeight="Bold" Foreground="#334155" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Width="1" Background="#E2E8F0" Margin="2,2"/>
+
+                            <!-- 릴레이 칩 -->
+                            <Border Padding="8,2">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Ellipse Width="8" Height="8" VerticalAlignment="Center" Margin="0,0,6,0">
+                                        <Ellipse.Style>
+                                            <Style TargetType="Ellipse">
+                                                <Setter Property="Fill" Value="#CBD5E1"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsRelayConnected}" Value="True">
+                                                        <Setter Property="Fill" Value="#10B981"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Ellipse.Style>
+                                    </Ellipse>
+                                    <TextBlock Text="릴레이보드" FontSize="11" FontWeight="Bold" Foreground="#334155" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- 우측 툴바 버튼 -->
+                    <Button Command="{Binding ScanAndConnectAllCommand}" Style="{StaticResource OutlineButton}" Margin="0,0,6,0">
+                        <StackPanel Orientation="Horizontal">
+                            <iconPacks:PackIconMaterial Kind="Radar" Width="14" Height="14" VerticalAlignment="Center" Margin="0,0,6,0" Foreground="#2563EB"/>
                             <TextBlock Text="장비 스캔" FontSize="12" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Button>
 
-                    <!-- 장비 진단 버튼 -->
-                    <Button Command="{Binding OpenSelfTestWindowCommand}" Style="{StaticResource OutlineButton}" Height="34" Margin="0,0,6,0">
+                    <Button Command="{Binding OpenSelfTestWindowCommand}" Style="{StaticResource OutlineButton}" Margin="0,0,6,0">
                         <StackPanel Orientation="Horizontal">
-                            <iconPacks:PackIconMaterial Kind="Stethoscope" VerticalAlignment="Center" Margin="0,0,6,0" Foreground="#059669"/>
+                            <iconPacks:PackIconMaterial Kind="Stethoscope" Width="14" Height="14" VerticalAlignment="Center" Margin="0,0,6,0" Foreground="#059669"/>
                             <TextBlock Text="장비 진단" FontSize="12" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Button>
 
-                    <!-- 결과 검색 버튼 -->
-                    <Button Command="{Binding OpenResultSearchCommand}" Style="{StaticResource OutlineButton}" Height="34" Margin="0,0,6,0">
+                    <Button Command="{Binding OpenResultSearchCommand}" Style="{StaticResource OutlineButton}" Margin="0,0,6,0">
                         <StackPanel Orientation="Horizontal">
-                            <iconPacks:PackIconMaterial Kind="Magnify" VerticalAlignment="Center" Margin="0,0,6,0" Foreground="#2563EB"/>
-                            <TextBlock Text="결과 검색" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                            <iconPacks:PackIconMaterial Kind="DatabaseSearch" Width="14" Height="14" VerticalAlignment="Center" Margin="0,0,6,0" Foreground="#2563EB"/>
+                            <TextBlock Text="결과 검색" FontSize="12" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Button>
 
-                    <!-- 통신 설정 버튼 -->
-                    <Button Command="{Binding OpenSettingsCommand}" Style="{StaticResource OutlineButton}" Height="34">
+                    <Button Command="{Binding OpenSettingsCommand}" Style="{StaticResource OutlineButton}" IsEnabled="{Binding IsNotTesting}" >
                         <StackPanel Orientation="Horizontal">
-                            <iconPacks:PackIconMaterial Kind="Cog" VerticalAlignment="Center" Margin="0,0,6,0" Foreground="#64748B"/>
-                            <TextBlock Text="통신 설정" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                            <iconPacks:PackIconMaterial Kind="TuneVariant" Width="14" Height="14" VerticalAlignment="Center" Margin="0,0,6,0" Foreground="#475569"/>
+                            <TextBlock Text="사양 설정" FontSize="12" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Button>
                 </StackPanel>
             </Grid>
         </Border>
 
-        <!-- ================= 1. 메인 워크스페이스 ================= -->
-        <Grid Grid.Row="1" Margin="20,14,20,14">
+        <!-- ================= 1. 메인 대시보드 워크스페이스 ================= -->
+        <Grid Grid.Row="1" Margin="20,16,20,16">
             <Grid.ColumnDefinitions>
-                <!-- 좌측 설정/조작/계측 (410px 고정) -->
-                <ColumnDefinition Width="410"/>
-                <!-- 우측 모니터링/결과표 (가변) -->
+                <!-- 좌측 커맨드 센터 (390px 고정, 우측과 하단 라인 완벽 일치) -->
+                <ColumnDefinition Width="390"/>
+                <!-- 우측 텔레메트리 & 결과 뷰 (가변) -->
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
-            <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto" Margin="0,0,16,0">
-                <StackPanel>
+            <!-- ================= [좌측] 컨트롤 커맨드 센터 ================= -->
+            <!-- 최상위 Border에서는 IsEnabled="{Binding IsNotTesting}" 제거하여 긴급 정지 버튼 비활성화 방지 -->
+            <Border Grid.Column="0" Style="{StaticResource WhiteCard}" Margin="0,0,16,0" Padding="18,18" VerticalAlignment="Stretch">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <!-- 0: 상단 파라미터 선택 그룹 -->
+                        <RowDefinition Height="Auto"/>
+                        <!-- 1: 중단 검사 사양 요약 (여백 균형 배분) -->
+                        <RowDefinition Height="*"/>
+                        <!-- 2: 하단 실행 버튼 도크 (바닥 고정) -->
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
 
-                    <!-- [1. 통합 카드] 시험 식별 및 레일별 기준값 설정 -->
-                    <Border Style="{StaticResource WhiteCard}" Margin="0,0,0,12">
+                    <!-- [상단] 식별자, 모듈, 레일, 동작 모드, 시험 시간 선택 (시험 중 잠금) -->
+                    <StackPanel Grid.Row="0" IsEnabled="{Binding IsNotTesting}">
+
+                        <!-- 1. 시험명 / S/N (X버튼 쏠림 현상 수정) -->
+                        <TextBlock Text="시험명 / 관리 번호 (S/N)" Style="{StaticResource SectionLabel}"/>
+                        <TextBox Text="{Binding TestIdentifierName, UpdateSourceTrigger=PropertyChanged}" 
+                                 mah:TextBoxHelper.Watermark="자동 채번 또는 직접 입력"
+                                 mah:TextBoxHelper.ClearTextButton="True"
+                                 mah:TextBoxHelper.ButtonWidth="28"
+                                 Height="34" Margin="0,0,0,16" 
+                                 Padding="10,0,30,0" VerticalContentAlignment="Center"
+                                 FontSize="12" FontWeight="Bold" Foreground="#0F172A"
+                                 Background="#F8FAFC" BorderBrush="#CBD5E1" BorderThickness="1"/>
+
+                        <!-- 2. 시험 대상 모듈 6종 -->
+                        <TextBlock Text="시험 대상 모듈" Style="{StaticResource SectionLabel}"/>
+                        <Border Background="#F1F5F9" CornerRadius="8" Padding="3" BorderBrush="#E2E8F0" BorderThickness="1" Margin="0,0,0,16">
+                            <UniformGrid Columns="2">
+                                <RadioButton Content="TCMS-CC" IsChecked="{Binding IsTargetTcmsCc}" Command="{Binding ChangeTargetSystemCommand}" CommandParameter="TCMS-CC" Style="{StaticResource TargetSegmentButton}" Height="30"/>
+                                <RadioButton Content="TCMS-TC" IsChecked="{Binding IsTargetTcmsTc}" Command="{Binding ChangeTargetSystemCommand}" CommandParameter="TCMS-TC" Style="{StaticResource TargetSegmentButton}" Height="30"/>
+                                <RadioButton Content="CI-123"  IsChecked="{Binding IsTargetCi123}"  Command="{Binding ChangeTargetSystemCommand}" CommandParameter="CI-123"  Style="{StaticResource TargetSegmentButton}" Height="30"/>
+                                <RadioButton Content="CI-4"    IsChecked="{Binding IsTargetCi4}"    Command="{Binding ChangeTargetSystemCommand}" CommandParameter="CI-4"    Style="{StaticResource TargetSegmentButton}" Height="30"/>
+                                <RadioButton Content="SIV-123" IsChecked="{Binding IsTargetSiv123}" Command="{Binding ChangeTargetSystemCommand}" CommandParameter="SIV-123" Style="{StaticResource TargetSegmentButton}" Height="30"/>
+                                <RadioButton Content="SIV-4"   IsChecked="{Binding IsTargetSiv4}"   Command="{Binding ChangeTargetSystemCommand}" CommandParameter="SIV-4"   Style="{StaticResource TargetSegmentButton}" Height="30"/>
+                            </UniformGrid>
+                        </Border>
+
+                        <!-- 3. 시험 출력 레일 4종 -->
+                        <DockPanel Margin="2,0,2,6">
+                            <TextBlock Text="시험 출력 레일" FontSize="11" FontWeight="Bold" Foreground="#475569"/>
+                            <TextBlock Text="릴레이 자동 스위칭" FontSize="10" Foreground="#2563EB" FontWeight="SemiBold" HorizontalAlignment="Right"/>
+                        </DockPanel>
+                        <Border Background="#F1F5F9" CornerRadius="8" Padding="3" BorderBrush="#E2E8F0" BorderThickness="1" Margin="0,0,0,16">
+                            <UniformGrid Columns="4">
+                                <RadioButton Content="5V"  GroupName="RailSelectGroup" IsChecked="{Binding Is5VSelected}"  IsEnabled="{Binding Is5VSupported}"  Style="{StaticResource TargetSegmentButton}" Height="30"/>
+                                <RadioButton Content="24V" GroupName="RailSelectGroup" IsChecked="{Binding Is24VSelected}" IsEnabled="{Binding Is24VSupported}" Style="{StaticResource TargetSegmentButton}" Height="30"/>
+                                <RadioButton Content="30V" GroupName="RailSelectGroup" IsChecked="{Binding Is30VSelected}" IsEnabled="{Binding Is30VSupported}" Style="{StaticResource TargetSegmentButton}" Height="30"/>
+                                <RadioButton Content="48V" GroupName="RailSelectGroup" IsChecked="{Binding Is48VSelected}" IsEnabled="{Binding Is48VSupported}" Style="{StaticResource TargetSegmentButton}" Height="30"/>
+                            </UniformGrid>
+                        </Border>
+
+                        <!-- 4. 부하 동작 모드 (CC / CV) -->
+                        <TextBlock Text="부하 동작 모드" Style="{StaticResource SectionLabel}"/>
+                        <Border Background="#F1F5F9" CornerRadius="8" Padding="3" BorderBrush="#E2E8F0" BorderThickness="1" Margin="0,0,0,16">
+                            <UniformGrid Columns="2">
+                                <RadioButton Content="CC (정전류 모드)" GroupName="TestModeSelectionGroup" IsChecked="{Binding IsModeCc}" Style="{StaticResource TargetSegmentButton}" Height="30"/>
+                                <RadioButton Content="CV (정전압 모드)" GroupName="TestModeSelectionGroup" IsChecked="{Binding IsModeCv}" Style="{StaticResource TargetSegmentButton}" Height="30"/>
+                            </UniformGrid>
+                        </Border>
+
+                        <!-- 5. 지속 부하 시험 시간 (여백 및 표기 개선) -->
+                        <DockPanel Margin="2,0,2,6">
+                            <TextBlock Text="지속 부하 시험 시간" FontSize="11" FontWeight="Bold" Foreground="#475569" VerticalAlignment="Center"/>
+                            <TextBlock Text="초 단위 (1~3600s)" FontSize="10" Foreground="#94A3B8" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                        </DockPanel>
+                        <Grid Height="34" Margin="0,0,0,18">
+                            <mah:NumericUpDown Visibility="{Binding Is5VSelected, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                               Value="{Binding Spec5V_EnduranceTime, UpdateSourceTrigger=PropertyChanged}" 
+                                               Minimum="1" Maximum="3600" Interval="1" StringFormat="{}{0:F0} 초"
+                                               FontSize="12" FontWeight="Bold" TextAlignment="Left" Padding="10,0"/>
+                            <mah:NumericUpDown Visibility="{Binding Is24VSelected, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                               Value="{Binding Spec24V_EnduranceTime, UpdateSourceTrigger=PropertyChanged}" 
+                                               Minimum="1" Maximum="3600" Interval="1" StringFormat="{}{0:F0} 초"
+                                               FontSize="12" FontWeight="Bold" TextAlignment="Left" Padding="10,0"/>
+                            <mah:NumericUpDown Visibility="{Binding Is30VSelected, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                               Value="{Binding Spec30V_EnduranceTime, UpdateSourceTrigger=PropertyChanged}" 
+                                               Minimum="1" Maximum="3600" Interval="1" StringFormat="{}{0:F0} 초"
+                                               FontSize="12" FontWeight="Bold" TextAlignment="Left" Padding="10,0"/>
+                            <mah:NumericUpDown Visibility="{Binding Is48VSelected, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                               Value="{Binding Spec48V_EnduranceTime, UpdateSourceTrigger=PropertyChanged}" 
+                                               Minimum="1" Maximum="3600" Interval="1" StringFormat="{}{0:F0} 초"
+                                               FontSize="12" FontWeight="Bold" TextAlignment="Left" Padding="10,0"/>
+                        </Grid>
+                    </StackPanel>
+
+                    <!-- [중단] 현재 레일 검사 사양 요약 (시험 중 사양 변경 버튼 조작 방지) -->
+                    <Border Grid.Row="1" Background="#F8FAFC" BorderBrush="#E2E8F0" BorderThickness="1" CornerRadius="8" Padding="14,12" VerticalAlignment="Top" IsEnabled="{Binding IsNotTesting}">
                         <StackPanel>
-                            <!-- [신규 추가] 시험명 / 시리얼 식별자 입력창 -->
-                            <TextBlock Text="시험명 / 관리 번호 (S/N)" FontSize="11" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,6"/>
-                            <TextBox Text="{Binding TestIdentifierName, UpdateSourceTrigger=PropertyChanged}" 
-                                     mah:TextBoxHelper.Watermark="자동 채번 또는 직접 입력"
-                                     mah:TextBoxHelper.ClearTextButton="True"
-                                     Height="32" Margin="0,0,0,12" 
-                                     Padding="8,0" VerticalContentAlignment="Center"
-                                     FontWeight="SemiBold" Foreground="#0F172A"
-                                     BorderBrush="#CBD5E1" BorderThickness="1"/>
-
-                            <!-- 시험 대상 선택 -->
-                            <TextBlock Text="시험 대상" FontSize="11" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,6"/>
-                            <Border Background="#F1F5F9" CornerRadius="8" Padding="3" BorderBrush="#E2E8F0" BorderThickness="1" Margin="0,0,0,14">
-                                <UniformGrid Columns="3">
-                                    <RadioButton Content="TCMS" IsChecked="{Binding IsTargetTcms}" Command="{Binding ChangeTargetSystemCommand}" CommandParameter="TCMS" Style="{StaticResource TargetSegmentButton}"/>
-                                    <RadioButton Content="SIV" IsChecked="{Binding IsTargetSiv}" Command="{Binding ChangeTargetSystemCommand}" CommandParameter="SIV" Style="{StaticResource TargetSegmentButton}"/>
-                                    <RadioButton Content="CI" IsChecked="{Binding IsTargetCi}" Command="{Binding ChangeTargetSystemCommand}" CommandParameter="CI" Style="{StaticResource TargetSegmentButton}"/>
-                                </UniformGrid>
-                            </Border>
-
-                            <Border Height="1" Background="#E2E8F0" Margin="0,0,0,12"/>
-
-                            <!-- 시험 레일 선택 -->
-                            <Grid Margin="0,0,0,6">
-                                <TextBlock Text="시험 레일" FontSize="11" FontWeight="Bold" Foreground="#64748B"/>
-                                <TextBlock Text="*선택 레일 검사" FontSize="10" Foreground="#2563EB" FontWeight="Bold" HorizontalAlignment="Right"/>
-                            </Grid>
-                            <Border Background="#F1F5F9" CornerRadius="8" Padding="3" BorderBrush="#E2E8F0" BorderThickness="1" Margin="0,0,0,14">
-                                <UniformGrid Columns="3">
-                                    <RadioButton Content="5V" GroupName="RailSelectGroup" 
-                                                 IsChecked="{Binding Is5VSelected}" 
-                                                 Style="{StaticResource TargetSegmentButton}"/>
-                                    <RadioButton Content="24V" GroupName="RailSelectGroup" 
-                                                 IsChecked="{Binding Is24VSelected}" 
-                                                 IsEnabled="{Binding Is24VSupported}"
-                                                 Style="{StaticResource TargetSegmentButton}"/>
-                                    <RadioButton Content="30V" GroupName="RailSelectGroup" 
-                                                 IsChecked="{Binding Is30VSelected}" 
-                                                 IsEnabled="{Binding Is30VSupported}"
-                                                 Style="{StaticResource TargetSegmentButton}"/>
-                                </UniformGrid>
-                            </Border>
-
-                            <!-- 지속 부하 시험 그룹 -->
-                            <Border Background="#F8FAFC" BorderBrush="#E2E8F0" BorderThickness="1" CornerRadius="6" Padding="12,12" Margin="0,0,0,10">
-                                <StackPanel>
-                                    <Grid Margin="0,0,0,10">
-                                        <TextBlock Text="지속 부하 시험" FontSize="11" FontWeight="Bold" Foreground="#2563EB" VerticalAlignment="Center"/>
-                                        <Border Background="#DBEAFE" CornerRadius="4" Padding="7,2" HorizontalAlignment="Right" VerticalAlignment="Center">
-                                            <TextBlock Text="{Binding ActiveTestingChannelName}" FontSize="10" FontWeight="Bold" Foreground="#1D4ED8"/>
-                                        </Border>
-                                    </Grid>
-
-                                    <!-- CC / CV 모드 선택 -->
-                                    <Border Background="#F1F5F9" CornerRadius="6" Padding="2" BorderBrush="#E2E8F0" BorderThickness="1" Margin="0,0,0,12">
-                                        <UniformGrid Columns="2">
-                                            <RadioButton Content="CC (정전류)" 
-                                                         GroupName="TestModeSelectionGroup"
-                                                         IsChecked="{Binding IsModeCc}" 
-                                                         Style="{StaticResource TargetSegmentButton}"
-                                                         Height="34" Padding="0,6"/>
-                                            <RadioButton Content="CV (정전압)" 
-                                                         GroupName="TestModeSelectionGroup"
-                                                         IsChecked="{Binding IsModeCv}" 
-                                                         Style="{StaticResource TargetSegmentButton}"
-                                                         Height="34" Padding="0,6"/>
-                                        </UniformGrid>
-                                    </Border>
-
-                                    <!-- 모드별 인가 조건 및 판정 기준 -->
-                                    <Grid Margin="0,0,0,8">
-                                        <!-- CC 모드 -->
-                                        <Grid Visibility="{Binding IsModeCc, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="*"/>
-                                                <ColumnDefinition Width="10"/>
-                                                <ColumnDefinition Width="*"/>
-                                            </Grid.ColumnDefinitions>
-                                            <StackPanel Grid.Column="0">
-                                                <TextBlock Text="설정 부하 전류 (A)" FontSize="11" Foreground="#64748B" Margin="0,0,0,4"/>
-                                                <Grid Height="32">
-                                                    <mah:NumericUpDown Visibility="{Binding Is5VSelected, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                                                       Value="{Binding Spec5V_CcCurrent, UpdateSourceTrigger=PropertyChanged}" Minimum="0.1" Maximum="20" Interval="0.1" StringFormat="F2"/>
-                                                    <mah:NumericUpDown Visibility="{Binding Is24VSelected, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                                                       Value="{Binding Spec24V_CcCurrent, UpdateSourceTrigger=PropertyChanged}" Minimum="0.1" Maximum="20" Interval="0.1" StringFormat="F2"/>
-                                                    <mah:NumericUpDown Visibility="{Binding Is30VSelected, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                                                       Value="{Binding Spec30V_CcCurrent, UpdateSourceTrigger=PropertyChanged}" Minimum="0.1" Maximum="20" Interval="0.1" StringFormat="F2"/>
-                                                </Grid>
-                                            </StackPanel>
-                                            <StackPanel Grid.Column="2">
-                                                <TextBlock Text="최저 전압 (V)" FontSize="11" Foreground="#64748B" Margin="0,0,0,4"/>
-                                                <Grid Height="32">
-                                                    <mah:NumericUpDown Visibility="{Binding Is5VSelected, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                                                       Value="{Binding Spec5V_CcMinVolt, UpdateSourceTrigger=PropertyChanged}" Minimum="1.0" Maximum="10" Interval="0.05" StringFormat="F2"/>
-                                                    <mah:NumericUpDown Visibility="{Binding Is24VSelected, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                                                       Value="{Binding Spec24V_CcMinVolt, UpdateSourceTrigger=PropertyChanged}" Minimum="10.0" Maximum="35" Interval="0.1" StringFormat="F2"/>
-                                                    <mah:NumericUpDown Visibility="{Binding Is30VSelected, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                                                       Value="{Binding Spec30V_CcMinVolt, UpdateSourceTrigger=PropertyChanged}" Minimum="15.0" Maximum="45" Interval="0.1" StringFormat="F2"/>
-                                                </Grid>
-                                            </StackPanel>
-                                        </Grid>
-
-                                        <!-- CV 모드 -->
-                                        <Grid Visibility="{Binding IsModeCv, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="*"/>
-                                                <ColumnDefinition Width="10"/>
-                                                <ColumnDefinition Width="*"/>
-                                            </Grid.ColumnDefinitions>
-                                            <StackPanel Grid.Column="0">
-                                                <TextBlock Text="설정 부하 전압 (V)" FontSize="11" Foreground="#64748B" Margin="0,0,0,4"/>
-                                                <Grid Height="32">
-                                                    <mah:NumericUpDown Visibility="{Binding Is5VSelected, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                                                       Value="{Binding Spec5V_CvVolt, UpdateSourceTrigger=PropertyChanged}" Minimum="1.0" Maximum="10" Interval="0.05" StringFormat="F2"/>
-                                                    <mah:NumericUpDown Visibility="{Binding Is24VSelected, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                                                       Value="{Binding Spec24V_CvVolt, UpdateSourceTrigger=PropertyChanged}" Minimum="10.0" Maximum="35" Interval="0.1" StringFormat="F2"/>
-                                                    <mah:NumericUpDown Visibility="{Binding Is30VSelected, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                                                       Value="{Binding Spec30V_CvVolt, UpdateSourceTrigger=PropertyChanged}" Minimum="15.0" Maximum="45" Interval="0.1" StringFormat="F2"/>
-                                                </Grid>
-                                            </StackPanel>
-                                            <StackPanel Grid.Column="2">
-                                                <TextBlock Text="최저 전류 (A)" FontSize="11" Foreground="#64748B" Margin="0,0,0,4"/>
-                                                <Grid Height="32">
-                                                    <mah:NumericUpDown Visibility="{Binding Is5VSelected, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                                                       Value="{Binding Spec5V_CvMinCurrent, UpdateSourceTrigger=PropertyChanged}" Minimum="0.1" Maximum="20" Interval="0.1" StringFormat="F2"/>
-                                                    <mah:NumericUpDown Visibility="{Binding Is24VSelected, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                                                       Value="{Binding Spec24V_CvMinCurrent, UpdateSourceTrigger=PropertyChanged}" Minimum="0.1" Maximum="20" Interval="0.1" StringFormat="F2"/>
-                                                    <mah:NumericUpDown Visibility="{Binding Is30VSelected, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                                                       Value="{Binding Spec30V_CvMinCurrent, UpdateSourceTrigger=PropertyChanged}" Minimum="0.1" Maximum="20" Interval="0.1" StringFormat="F2"/>
-                                                </Grid>
-                                            </StackPanel>
-                                        </Grid>
-                                    </Grid>
-
-                                    <!-- 공통 시험 시간 (초) -->
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="10"/>
-                                            <ColumnDefinition Width="*"/>
-                                        </Grid.ColumnDefinitions>
-                                        <StackPanel Grid.Column="0">
-                                            <TextBlock Text="시험 시간 (초)" FontSize="11" Foreground="#64748B" Margin="0,0,0,4"/>
-                                            <Grid Height="32">
-                                                <mah:NumericUpDown Visibility="{Binding Is5VSelected, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                                                   Value="{Binding Spec5V_EnduranceTime, UpdateSourceTrigger=PropertyChanged}" Minimum="1" Maximum="3600" Interval="1" StringFormat="F0"/>
-                                                <mah:NumericUpDown Visibility="{Binding Is24VSelected, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                                                   Value="{Binding Spec24V_EnduranceTime, UpdateSourceTrigger=PropertyChanged}" Minimum="1" Maximum="3600" Interval="1" StringFormat="F0"/>
-                                                <mah:NumericUpDown Visibility="{Binding Is30VSelected, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                                                   Value="{Binding Spec30V_EnduranceTime, UpdateSourceTrigger=PropertyChanged}" Minimum="1" Maximum="3600" Interval="1" StringFormat="F0"/>
-                                            </Grid>
-                                        </StackPanel>
-                                    </Grid>
-                                </StackPanel>
-                            </Border>
-
-                            <!-- 과전류 차단 시험 그룹 -->
-                            <Border Background="#FEF2F2" BorderBrush="#FECACA" BorderThickness="1" CornerRadius="6" Padding="12,10">
-                                <StackPanel>
-                                    <TextBlock Text="과전류 차단 시험" FontSize="11" FontWeight="Bold" Foreground="#DC2626" Margin="0,0,0,8"/>
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="10"/>
-                                            <ColumnDefinition Width="*"/>
-                                        </Grid.ColumnDefinitions>
-                                        <StackPanel Grid.Column="0">
-                                            <TextBlock Text="차단 기준 (A)" FontSize="11" Foreground="#64748B" Margin="0,0,0,4"/>
-                                            <Grid Height="32">
-                                                <mah:NumericUpDown Visibility="{Binding Is5VSelected, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                                                   Value="{Binding Spec5V_TripCurrent, UpdateSourceTrigger=PropertyChanged}" Minimum="0.5" Maximum="30" Interval="0.1" StringFormat="F2"/>
-                                                <mah:NumericUpDown Visibility="{Binding Is24VSelected, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                                                   Value="{Binding Spec24V_TripCurrent, UpdateSourceTrigger=PropertyChanged}" Minimum="0.5" Maximum="30" Interval="0.1" StringFormat="F2"/>
-                                                <mah:NumericUpDown Visibility="{Binding Is30VSelected, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                                                   Value="{Binding Spec30V_TripCurrent, UpdateSourceTrigger=PropertyChanged}" Minimum="0.5" Maximum="30" Interval="0.1" StringFormat="F2"/>
-                                            </Grid>
-                                        </StackPanel>
-                                    </Grid>
-                                </StackPanel>
-                            </Border>
-                        </StackPanel>
-                    </Border>
-
-                    <!-- [2. 실시간 전원 모니터 카드] (위치 이동) -->
-                    <Border Style="{StaticResource WhiteCard}" Margin="0,0,0,12">
-                        <StackPanel>
-                            <Grid Margin="0,0,0,10">
-                                <TextBlock Text="실시간 전원 모니터" FontSize="11" FontWeight="Bold" Foreground="#64748B"/>
-                                <TextBlock Text="{Binding ActiveTestingChannelName}" FontSize="11" FontWeight="Bold" Foreground="#2563EB" HorizontalAlignment="Right"/>
-                            </Grid>
-
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="1"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
-
-                                <!-- 좌측: 입력 전원 (파워) -->
-                                <StackPanel Grid.Column="0" Margin="0,0,10,0">
-                                    <TextBlock Text="입력 전원 (파워)" FontSize="10" FontWeight="Bold" Foreground="#94A3B8" Margin="0,0,0,6"/>
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="*"/>
-                                        </Grid.ColumnDefinitions>
-                                        <StackPanel Grid.Column="0">
-                                            <TextBlock Text="공급 전압" FontSize="10" Foreground="#64748B"/>
-                                            <StackPanel Orientation="Horizontal">
-                                                <TextBlock Text="{Binding LivePowerVoltage, StringFormat='{}{0:F2}'}" FontSize="20" FontWeight="Bold" Foreground="#0F172A"/>
-                                                <TextBlock Text=" V" FontSize="11" Foreground="#94A3B8" VerticalAlignment="Bottom" Margin="0,0,0,2"/>
-                                            </StackPanel>
-                                        </StackPanel>
-                                        <StackPanel Grid.Column="1">
-                                            <TextBlock Text="공급 전류" FontSize="10" Foreground="#64748B"/>
-                                            <StackPanel Orientation="Horizontal">
-                                                <TextBlock Text="{Binding LivePowerCurrent, StringFormat='{}{0:F2}'}" FontSize="20" FontWeight="Bold" Foreground="#475569"/>
-                                                <TextBlock Text=" A" FontSize="11" Foreground="#94A3B8" VerticalAlignment="Bottom" Margin="0,0,0,2"/>
-                                            </StackPanel>
-                                        </StackPanel>
-                                    </Grid>
+                            <DockPanel Margin="0,0,0,10">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <iconPacks:PackIconMaterial Kind="ClipboardCheckOutline" Width="14" Height="14" Foreground="#334155" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                    <TextBlock Text="적용 중인 검사 기준 사양" FontSize="11.5" FontWeight="Bold" Foreground="#1E293B" VerticalAlignment="Center"/>
                                 </StackPanel>
 
-                                <!-- 구분선 -->
-                                <Border Grid.Column="1" Background="#E2E8F0" Margin="0,4"/>
+                                <!-- 캡슐형 사양 설정 버튼 -->
+                                <Button Command="{Binding OpenSettingsCommand}" HorizontalAlignment="Right" Cursor="Hand" BorderThickness="0">
+                                    <Button.Template>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border x:Name="pill" Background="#EFF6FF" BorderBrush="#BFDBFE" BorderThickness="1" CornerRadius="12" Padding="8,3">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <iconPacks:PackIconMaterial Kind="CogOutline" Width="11" Height="11" Foreground="#2563EB" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                                    <TextBlock Text="사양 변경" FontSize="10.5" FontWeight="Bold" Foreground="#2563EB" VerticalAlignment="Center"/>
+                                                </StackPanel>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="pill" Property="Background" Value="#DBEAFE"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Button.Template>
+                                </Button>
+                            </DockPanel>
 
-                                <!-- 우측: 출력 전원 (부하) -->
-                                <StackPanel Grid.Column="2" Margin="10,0,0,0">
-                                    <TextBlock Text="출력 전원 (부하)" FontSize="10" FontWeight="Bold" Foreground="#2563EB" Margin="0,0,0,6"/>
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="*"/>
-                                        </Grid.ColumnDefinitions>
-                                        <StackPanel Grid.Column="0">
-                                            <TextBlock Text="측정 전압" FontSize="10" Foreground="#64748B"/>
-                                            <StackPanel Orientation="Horizontal">
-                                                <TextBlock Text="{Binding LiveLoadVoltage, StringFormat='{}{0:F3}'}" FontSize="20" FontWeight="Bold" Foreground="#0F172A"/>
-                                                <TextBlock Text=" V" FontSize="11" Foreground="#94A3B8" VerticalAlignment="Bottom" Margin="0,0,0,2"/>
-                                            </StackPanel>
-                                        </StackPanel>
-                                        <StackPanel Grid.Column="1">
-                                            <TextBlock Text="부하 전류" FontSize="10" Foreground="#64748B"/>
-                                            <StackPanel Orientation="Horizontal">
-                                                <TextBlock Text="{Binding LiveLoadCurrent, StringFormat='{}{0:F3}'}" FontSize="20" FontWeight="Bold" Foreground="#2563EB"/>
-                                                <TextBlock Text=" A" FontSize="11" Foreground="#94A3B8" VerticalAlignment="Bottom" Margin="0,0,0,2"/>
-                                            </StackPanel>
-                                        </StackPanel>
-                                    </Grid>
-                                </StackPanel>
-                            </Grid>
-                        </StackPanel>
-                    </Border>
-
-                    <!-- [3. 진행 상태 및 수율 요약 카드] (위치 이동) -->
-                    <Border Style="{StaticResource WhiteCard}" Margin="0,0,0,12">
-                        <StackPanel>
-                            <TextBlock Text="진행 상태" FontSize="11" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
-                            <TextBlock Text="{Binding CurrentStepDescription}" FontSize="12" FontWeight="SemiBold" Foreground="#0F172A" Margin="0,0,0,6" TextTrimming="CharacterEllipsis"/>
-                            <ProgressBar Value="{Binding SequenceProgressPercent}" Height="7" Background="#F1F5F9" Foreground="#2563EB" BorderThickness="0" Margin="0,0,0,6"/>
-                            <Grid Margin="0,0,0,10">
-                                <TextBlock Text="진행률" FontSize="11" Foreground="#94A3B8"/>
-                                <TextBlock Text="{Binding SequenceProgressPercent, StringFormat='{}{0}%'}" FontSize="11" FontWeight="Bold" Foreground="#2563EB" HorizontalAlignment="Right"/>
-                            </Grid>
-
-                            <Border Background="#F8FAFC" BorderBrush="#E2E8F0" BorderThickness="1" CornerRadius="6" Padding="10,8">
+                            <!-- STEP 1: 차단 시험 요약 (좌측 레드 액센트 보더) -->
+                            <Border Background="#FFFFFF" BorderBrush="#FECACA" BorderThickness="4,1,1,1" CornerRadius="6" Padding="10,8" Margin="0,0,0,8">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
                                         <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0">
-                                        <TextBlock Text="총 검사" FontSize="10" Foreground="#64748B"/>
-                                        <TextBlock Text="{Binding TotalTestedCount}" FontSize="16" FontWeight="Bold" Foreground="#0F172A"/>
+                                    <Border Grid.Column="0" Background="#FEF2F2" BorderBrush="#FCA5A5" BorderThickness="1" CornerRadius="4" Padding="6,2" Margin="0,0,10,0" VerticalAlignment="Center">
+                                        <TextBlock Text="STEP 1" FontSize="9" FontWeight="Black" Foreground="#DC2626"/>
+                                    </Border>
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                        <TextBlock Text="차단 시험 기준 (OCP / OVP)" FontSize="10" FontWeight="SemiBold" Foreground="#64748B" Margin="0,0,0,1"/>
+                                        <TextBlock Text="{Binding SummaryTripCondition, FallbackValue='스위핑 점검 / 트립기준 설정됨'}" 
+                                                   FontSize="12" FontWeight="Bold" Foreground="#DC2626" TextTrimming="CharacterEllipsis"/>
                                     </StackPanel>
-                                    <StackPanel Grid.Column="1">
-                                        <TextBlock Text="합격 (PASS)" FontSize="10" Foreground="#059669"/>
-                                        <TextBlock Text="{Binding TotalPassedCount}" FontSize="16" FontWeight="Bold" Foreground="#059669"/>
-                                    </StackPanel>
-                                    <StackPanel Grid.Column="2">
-                                        <TextBlock Text="불합격 (FAIL)" FontSize="10" Foreground="#DC2626"/>
-                                        <TextBlock Text="{Binding TotalFailedCount}" FontSize="16" FontWeight="Bold" Foreground="#DC2626"/>
+                                </Grid>
+                            </Border>
+
+                            <!-- STEP 2: 지속 부하 시험 요약 (좌측 블루 액센트 보더) -->
+                            <Border Background="#FFFFFF" BorderBrush="#BFDBFE" BorderThickness="4,1,1,1" CornerRadius="6" Padding="10,8">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Border Grid.Column="0" Background="#EFF6FF" BorderBrush="#93C5FD" BorderThickness="1" CornerRadius="4" Padding="6,2" Margin="0,0,10,0" VerticalAlignment="Center">
+                                        <TextBlock Text="STEP 2" FontSize="9" FontWeight="Black" Foreground="#2563EB"/>
+                                    </Border>
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                        <TextBlock Text="지속 부하 기준 (정격 유지)" FontSize="10" FontWeight="SemiBold" Foreground="#64748B" Margin="0,0,0,1"/>
+                                        <TextBlock Text="{Binding SummaryEnduranceCondition, FallbackValue='정격 부하 인가 및 최저치 유지'}" 
+                                                   FontSize="12" FontWeight="Bold" Foreground="#2563EB" TextTrimming="CharacterEllipsis"/>
                                     </StackPanel>
                                 </Grid>
                             </Border>
                         </StackPanel>
                     </Border>
 
-                    <!-- [4. 최하단 조작 패널] 검사 시작 / 긴급 정지 -->
-                    <Border Style="{StaticResource WhiteCard}" Margin="0,0,0,10">
-                        <Grid>
+                    <!-- [하단] 3대 시험 실행 액션 도크 (바닥 밀착 정렬) -->
+                    <StackPanel Grid.Row="2" VerticalAlignment="Bottom" Margin="0,16,0,0">
+                        <Border Height="1" Background="#E2E8F0" Margin="0,0,0,14"/>
+
+                        <!-- 1. 통합 자동 시험 시작 버튼 (Primary CTA: 시험 중 비활성화) -->
+                        <Button Command="{Binding StartIntegratedSequenceCommand}" IsEnabled="{Binding IsNotTesting}"
+                                Height="46" Margin="0,0,0,8" Cursor="Hand" BorderThickness="0">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border x:Name="btnBorder" Background="#2563EB" CornerRadius="8">
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <iconPacks:PackIconMaterial Kind="PlayCircle" Width="18" Height="18" Foreground="White" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                            <TextBlock Text="통합 시험 시작" FontSize="13" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="btnBorder" Property="Background" Value="#1D4ED8"/>
+                                        </Trigger>
+                                        <Trigger Property="IsPressed" Value="True">
+                                            <Setter TargetName="btnBorder" Property="Background" Value="#1E40AF"/>
+                                        </Trigger>
+                                        <Trigger Property="IsEnabled" Value="False">
+                                            <Setter TargetName="btnBorder" Property="Background" Value="#94A3B8"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Button.Template>
+                        </Button>
+
+                        <!-- 2. 단독 시험 버튼 2종 그리드 (Secondary Actions: 시험 중 비활성화) -->
+                        <Grid Margin="0,0,0,8">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="2*"/>
-                                <ColumnDefinition Width="1*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="8"/>
+                                <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
 
-                            <!-- 검사 시작 버튼 -->
-                            <Button Grid.Column="0" 
-                Command="{Binding StartSequenceCommand}" 
-                Style="{StaticResource PrimaryActionButton}" 
-                Height="50" Margin="0,0,8,0" FontWeight="Black">
-                                <StackPanel Orientation="Horizontal">
-                                    <iconPacks:PackIconMaterial Kind="Play" Width="20" Height="20" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                    <TextBlock Text="검사 시작" FontSize="16" VerticalAlignment="Center"/>
-                                </StackPanel>
+                            <!-- 차단 시험 단독 -->
+                            <Button Grid.Column="0" Command="{Binding StartTripOnlySequenceCommand}" Height="38" Cursor="Hand" BorderThickness="0" IsEnabled="{Binding IsNotTesting}">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border x:Name="border" Background="#FFF7ED" BorderBrush="#FDBA74" BorderThickness="1" CornerRadius="6">
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                <iconPacks:PackIconMaterial Kind="FlashAlertOutline" Width="13" Height="13" Foreground="#C2410C" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                                                <TextBlock Text="차단 시험 단독" FontSize="11.5" FontWeight="Bold" Foreground="#C2410C" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="border" Property="Background" Value="#FFEDD5"/>
+                                                <Setter TargetName="border" Property="BorderBrush" Value="#EA580C"/>
+                                            </Trigger>
+                                            <Trigger Property="IsEnabled" Value="False">
+                                                <Setter TargetName="border" Property="Background" Value="#F1F5F9"/>
+                                                <Setter TargetName="border" Property="BorderBrush" Value="#E2E8F0"/>
+                                                <Setter TargetName="border" Property="Opacity" Value="0.6"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Button.Template>
                             </Button>
 
-                            <!-- 긴급 정지 버튼 -->
-                            <Button Grid.Column="1" 
-                Command="{Binding EmergencyStopCommand}" 
-                Style="{StaticResource DangerActionButton}" 
-                Height="50" FontWeight="Bold">
-                                <StackPanel Orientation="Horizontal">
-                                    <iconPacks:PackIconMaterial Kind="AlertOctagon" Width="18" Height="18" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                                    <TextBlock Text="긴급 정지" FontSize="13" VerticalAlignment="Center"/>
-                                </StackPanel>
+                            <!-- 지속 부하 단독 -->
+                            <Button Grid.Column="2" Command="{Binding StartEnduranceOnlySequenceCommand}" Height="38" Cursor="Hand" BorderThickness="0" IsEnabled="{Binding IsNotTesting}">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border x:Name="border" Background="#F0FDFA" BorderBrush="#5EEAD4" BorderThickness="1" CornerRadius="6">
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                <iconPacks:PackIconMaterial Kind="TimerOutline" Width="13" Height="13" Foreground="#0F766E" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                                                <TextBlock Text="지속 부하 단독" FontSize="11.5" FontWeight="Bold" Foreground="#0F766E" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="border" Property="Background" Value="#CCFBF1"/>
+                                                <Setter TargetName="border" Property="BorderBrush" Value="#0D9488"/>
+                                            </Trigger>
+                                            <Trigger Property="IsEnabled" Value="False">
+                                                <Setter TargetName="border" Property="Background" Value="#F1F5F9"/>
+                                                <Setter TargetName="border" Property="BorderBrush" Value="#E2E8F0"/>
+                                                <Setter TargetName="border" Property="Opacity" Value="0.6"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Button.Template>
                             </Button>
                         </Grid>
-                    </Border>
 
-                </StackPanel>
-            </ScrollViewer>
+                        <!-- 3. 긴급 정지 버튼 (시험 중에도 항상 독립 활성화 유지) -->
+                        <Button Command="{Binding EmergencyStopCommand}" Height="36" Cursor="Hand" IsEnabled="True">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border x:Name="border" Background="#FEF2F2" BorderBrush="#FCA5A5" BorderThickness="1" CornerRadius="6">
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <iconPacks:PackIconMaterial Kind="OctagonOutline" Width="14" Height="14" Foreground="#DC2626" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                            <TextBlock Text="긴급 정지 (전원 및 부하 즉시 차단)" FontSize="11" FontWeight="Bold" Foreground="#DC2626" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="border" Property="Background" Value="#FEE2E2"/>
+                                            <Setter TargetName="border" Property="BorderBrush" Value="#EF4444"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Button.Template>
+                        </Button>
+                    </StackPanel>
 
-            <!-- 우측 패널: [최종 판정] + [실시간 파형] + [결과표] -->
+                </Grid>
+            </Border>
+            <!-- ================= [우측] 실시간 모니터링 & 결과 워크스페이스 ================= -->
             <Grid Grid.Column="1">
                 <Grid.RowDefinitions>
-                    <!-- 0: 상단 판정 배너 (고정) -->
-                    <RowDefinition Height="74"/>
-                    <!-- 1: 실시간 OxyPlot 그래프 -->
-                    <RowDefinition Height="1.2*"/>
+                    <!-- 0: 종합 모니터링 HUD 바 -->
+                    <RowDefinition Height="96"/>
+                    <!-- 1: 실시간 V-I 파형 차트 -->
+                    <RowDefinition Height="1.25*"/>
                     <!-- 2: 결과 명세 DataGrid -->
                     <RowDefinition Height="1*"/>
                 </Grid.RowDefinitions>
 
-                <!-- 0. 최종 판정 배너 -->
-                <Border Grid.Row="0" CornerRadius="8" BorderThickness="1" Margin="0,0,0,10">
-                    <Border.Style>
-                        <Style TargetType="Border">
-                            <Setter Property="Background" Value="#F8FAFC"/>
-                            <Setter Property="BorderBrush" Value="#E2E8F0"/>
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding FinalTestVerdict}" Value="PASS">
-                                    <Setter Property="Background" Value="#ECFDF5"/>
-                                    <Setter Property="BorderBrush" Value="#A7F3D0"/>
-                                </DataTrigger>
-                                <DataTrigger Binding="{Binding FinalTestVerdict}" Value="FAIL">
-                                    <Setter Property="Background" Value="#FEF2F2"/>
-                                    <Setter Property="BorderBrush" Value="#FECACA"/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </Border.Style>
-                    <Grid VerticalAlignment="Center" Margin="24,0">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
+                <!-- ================= 0. 종합 모니터링 헤더 바 (모듈 선택 제거 & 진행도 확장) ================= -->
+                <Grid Grid.Row="0" Margin="0,0,0,12">
+                    <Grid.ColumnDefinitions>
+                        <!-- 1. 최종 판정 배너 (170px 고정) -->
+                        <ColumnDefinition Width="170"/>
+                        <!-- 2. 실시간 전원/부하 계측 HUD (가변) -->
+                        <ColumnDefinition Width="1.1*"/>
+                        <!-- 3. 진행 상태 및 실시간 수율 (1.2*로 대폭 확장) -->
+                        <ColumnDefinition Width="1.2*"/>
+                    </Grid.ColumnDefinitions>
 
-                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                            <TextBlock Text="최종 판정" FontSize="10" FontWeight="Bold" Foreground="#64748B"/>
-                            <TextBlock Text="{Binding FinalTestVerdict}" FontSize="32" FontWeight="Black">
+                    <!-- [1] 최종 판정 배너 -->
+                    <Border Grid.Column="0" CornerRadius="10" BorderThickness="1" Margin="0,0,10,0">
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Setter Property="Background" Value="#FFFFFF"/>
+                                <Setter Property="BorderBrush" Value="#E2E8F0"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding FinalTestVerdict}" Value="PASS">
+                                        <Setter Property="Background" Value="#ECFDF5"/>
+                                        <Setter Property="BorderBrush" Value="#6EE7B7"/>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding FinalTestVerdict}" Value="FAIL">
+                                        <Setter Property="Background" Value="#FEF2F2"/>
+                                        <Setter Property="BorderBrush" Value="#FCA5A5"/>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding FinalTestVerdict}" Value="TESTING">
+                                        <Setter Property="Background" Value="#EFF6FF"/>
+                                        <Setter Property="BorderBrush" Value="#93C5FD"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                            <TextBlock Text="FINAL VERDICT" FontSize="9.5" FontWeight="Bold" Foreground="#64748B" HorizontalAlignment="Center" Margin="0,0,0,2"/>
+                            <TextBlock Text="{Binding FinalTestVerdict}" FontSize="26" FontWeight="Black" HorizontalAlignment="Center">
                                 <TextBlock.Style>
                                     <Style TargetType="TextBlock">
-                                        <Setter Property="Foreground" Value="#64748B"/>
+                                        <Setter Property="Foreground" Value="#475569"/>
                                         <Style.Triggers>
                                             <DataTrigger Binding="{Binding FinalTestVerdict}" Value="PASS">
                                                 <Setter Property="Foreground" Value="#059669"/>
@@ -681,154 +593,288 @@
                                 </TextBlock.Style>
                             </TextBlock>
                         </StackPanel>
+                    </Border>
 
-                        <!-- 현재 검사 레일 뱃지 -->
-                        <Border Grid.Column="1" Background="#FFFFFF" BorderBrush="#E2E8F0" BorderThickness="1" CornerRadius="6" Padding="12,6">
-                            <StackPanel Orientation="Horizontal">
-                                <iconPacks:PackIconMaterial Kind="Target" Foreground="#2563EB" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                                <TextBlock Text="현재 레일: " FontSize="11" Foreground="#64748B" VerticalAlignment="Center"/>
-                                <TextBlock Text="{Binding ActiveTestingChannelName}" FontSize="12" FontWeight="Bold" Foreground="#0F172A" VerticalAlignment="Center"/>
+                    <!-- [2] 실시간 전원/부하 모니터 (HUD) -->
+                    <Border Grid.Column="1" Style="{StaticResource WhiteCard}" Margin="0,0,10,0" Padding="14,10">
+                        <Grid VerticalAlignment="Center">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1*"/>
+                                <ColumnDefinition Width="1"/>
+                                <ColumnDefinition Width="1.2*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- 입력 전원 (파워) -->
+                            <StackPanel Grid.Column="0" Margin="0,0,10,0" VerticalAlignment="Center">
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                    <Ellipse Width="6" Height="6" Fill="#64748B" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                    <TextBlock Text="입력 (100V)" FontSize="10" FontWeight="Bold" Foreground="#64748B"/>
+                                </StackPanel>
+                                <UniformGrid Columns="2">
+                                    <StackPanel>
+                                        <TextBlock Text="전압" FontSize="9" Foreground="#94A3B8"/>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="{Binding LivePowerVoltage, StringFormat='{}{0:F1}'}" FontSize="18" FontWeight="Bold" Foreground="#334155"/>
+                                            <TextBlock Text="V" FontSize="10" FontWeight="Bold" Foreground="#94A3B8" VerticalAlignment="Bottom" Margin="2,0,0,2"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                    <StackPanel>
+                                        <TextBlock Text="전류" FontSize="9" Foreground="#94A3B8"/>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="{Binding LivePowerCurrent, StringFormat='{}{0:F2}'}" FontSize="18" FontWeight="Bold" Foreground="#334155"/>
+                                            <TextBlock Text="A" FontSize="10" FontWeight="Bold" Foreground="#94A3B8" VerticalAlignment="Bottom" Margin="2,0,0,2"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </UniformGrid>
                             </StackPanel>
-                        </Border>
-                    </Grid>
-                </Border>
 
-                <!-- 1. 실시간 V-I 파형 차트 카드 -->
-                <Border Grid.Row="1" Style="{StaticResource WhiteCard}" Margin="0,0,0,10" Padding="10">
+                            <!-- 구분선 -->
+                            <Border Grid.Column="1" Background="#E2E8F0" Margin="0,2"/>
+
+                            <!-- 출력 전원 (전자로더 실측) -->
+                            <StackPanel Grid.Column="2" Margin="12,0,0,0" VerticalAlignment="Center">
+                                <DockPanel Margin="0,0,0,4">
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <Ellipse Width="6" Height="6" Fill="#2563EB" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                        <TextBlock Text="출력 부하 실측" FontSize="10" FontWeight="Bold" Foreground="#1E40AF"/>
+                                    </StackPanel>
+                                    <Border Background="#EFF6FF" BorderBrush="#BFDBFE" BorderThickness="1" CornerRadius="4" Padding="6,1" HorizontalAlignment="Right">
+                                        <TextBlock Text="{Binding ActiveTestingChannelName}" FontSize="9.5" FontWeight="Bold" Foreground="#2563EB"/>
+                                    </Border>
+                                </DockPanel>
+                                <UniformGrid Columns="2">
+                                    <StackPanel>
+                                        <TextBlock Text="측정 전압" FontSize="9" Foreground="#64748B"/>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="{Binding LiveLoadVoltage, StringFormat='{}{0:F3}'}" FontSize="20" FontWeight="Black" Foreground="#0F172A"/>
+                                            <TextBlock Text="V" FontSize="10" FontWeight="Bold" Foreground="#64748B" VerticalAlignment="Bottom" Margin="2,0,0,2"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                    <StackPanel>
+                                        <TextBlock Text="부하 전류" FontSize="9" Foreground="#64748B"/>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="{Binding LiveLoadCurrent, StringFormat='{}{0:F3}'}" FontSize="20" FontWeight="Black" Foreground="#2563EB"/>
+                                            <TextBlock Text="A" FontSize="10" FontWeight="Bold" Foreground="#64748B" VerticalAlignment="Bottom" Margin="2,0,0,2"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </UniformGrid>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <!-- [3] 진행 상태 및 실시간 수율 (확장형) -->
+                    <Border Grid.Column="2" Style="{StaticResource WhiteCard}" Padding="16,10">
+                        <Grid VerticalAlignment="Center">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <!-- 현재 상세 스텝 메시지 & 진행률 (긴 문장도 여유 있게 수용) -->
+                            <DockPanel Grid.Row="0" Margin="0,0,0,6">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" MaxWidth="380">
+                                    <iconPacks:PackIconMaterial Kind="ProgressClock" Width="13" Height="13" Foreground="#2563EB" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                    <TextBlock Text="{Binding CurrentStepDescription}" FontSize="12" FontWeight="Bold" Foreground="#0F172A" TextTrimming="CharacterEllipsis"/>
+                                </StackPanel>
+                                <TextBlock Text="{Binding SequenceProgressPercent, StringFormat='{}{0}%'}" FontSize="13" FontWeight="Black" Foreground="#2563EB" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                            </DockPanel>
+
+                            <!-- 볼드 프로그레스바 -->
+                            <ProgressBar Grid.Row="1" Value="{Binding SequenceProgressPercent}" Height="7" Background="#F1F5F9" Foreground="#2563EB" BorderThickness="0" Margin="0,0,0,8"/>
+
+                            <!-- 수율 통계 배지 -->
+                            <Border Grid.Row="2" Background="#F8FAFC" BorderBrush="#E2E8F0" BorderThickness="1" CornerRadius="6" Padding="10,4">
+                                <UniformGrid Columns="3">
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                        <TextBlock Text="총 검사 " FontSize="10.5" Foreground="#64748B" VerticalAlignment="Center"/>
+                                        <TextBlock Text="{Binding TotalTestedCount}" FontSize="12.5" FontWeight="Black" Foreground="#0F172A" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                        <TextBlock Text="합격 " FontSize="10.5" Foreground="#059669" VerticalAlignment="Center"/>
+                                        <TextBlock Text="{Binding TotalPassedCount}" FontSize="12.5" FontWeight="Black" Foreground="#059669" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                        <TextBlock Text="불합격 " FontSize="10.5" Foreground="#DC2626" VerticalAlignment="Center"/>
+                                        <TextBlock Text="{Binding TotalFailedCount}" FontSize="12.5" FontWeight="Black" Foreground="#DC2626" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </UniformGrid>
+                            </Border>
+                        </Grid>
+                    </Border>
+                </Grid>
+
+                <!-- ================= 1. 실시간 V-I 파형 차트 카드 ================= -->
+                <Border Grid.Row="1" Style="{StaticResource WhiteCard}" Margin="0,0,0,12" Padding="14,12">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
 
-                        <Grid Grid.Row="0" Margin="4,0,4,6">
+                        <Grid Grid.Row="0" Margin="2,0,2,8">
                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                <iconPacks:PackIconMaterial Kind="ChartLine" Foreground="#2563EB" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                                <TextBlock Text="실시간 V-I 파형 트렌드" FontSize="11" FontWeight="Bold" Foreground="#334155"/>
+                                <iconPacks:PackIconMaterial Kind="ChartBellCurveCumulative" Width="15" Height="15" Foreground="#2563EB" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <TextBlock Text="실시간 파형 트렌드" FontSize="12" FontWeight="Bold" Foreground="#1E293B"/>
                             </StackPanel>
 
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                                <Border Background="#2563EB" Width="10" Height="3" Margin="0,0,4,0"/>
-                                <TextBlock Text="출력 전압 (V)" FontSize="10" FontWeight="SemiBold" Foreground="#64748B" Margin="0,0,14,0"/>
-                                <Border Background="#F59E0B" Width="10" Height="3" Margin="0,0,4,0"/>
-                                <TextBlock Text="부하 전류 (A)" FontSize="10" FontWeight="SemiBold" Foreground="#64748B"/>
+                                <Border Background="#2563EB" Width="12" Height="3" CornerRadius="1.5" Margin="0,0,6,0"/>
+                                <TextBlock Text="출력 전압 (V)" FontSize="11" FontWeight="SemiBold" Foreground="#475569" Margin="0,0,16,0"/>
+                                <Border Background="#F59E0B" Width="12" Height="3" CornerRadius="1.5" Margin="0,0,6,0"/>
+                                <TextBlock Text="부하 전류 (A)" FontSize="11" FontWeight="SemiBold" Foreground="#475569"/>
                             </StackPanel>
                         </Grid>
 
-                        <oxy:PlotView Grid.Row="1" Model="{Binding TrendPlotModel}" Background="#F8FAFC"/>
+                        <oxy:PlotView Grid.Row="1" Model="{Binding TrendPlotModel}" Background="#FFFFFF"/>
                     </Grid>
                 </Border>
 
-                <!-- 2. 결과 명세 DataGrid -->
-                <Border Grid.Row="2" Style="{StaticResource WhiteCard}" Padding="0">
-                    <DataGrid ItemsSource="{Binding TestResults}" AutoGenerateColumns="False" IsReadOnly="True"
-                              CanUserAddRows="False" Background="#FFFFFF" BorderThickness="0"
-                              RowBackground="#FFFFFF" AlternatingRowBackground="#FFFFFF"
-                              HeadersVisibility="Column" GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="#E2E8F0"
-                              ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                              ScrollViewer.VerticalScrollBarVisibility="Auto"
-                              ScrollViewer.CanContentScroll="False"
-                              SelectionMode="Single" SelectionUnit="FullRow"
-                              RowHeight="38" FontSize="12">
+                <!-- ================= 2. 결과 명세 DataGrid 카드 ================= -->
+                <Border Grid.Row="2" Style="{StaticResource WhiteCard}" Padding="0" ClipToBounds="True">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
 
-                        <DataGrid.CellStyle>
-                            <Style TargetType="DataGridCell">
-                                <Setter Property="BorderThickness" Value="0"/>
-                                <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
-                                <Setter Property="Foreground" Value="#0F172A"/>
-                                <Setter Property="Template">
-                                    <Setter.Value>
-                                        <ControlTemplate TargetType="DataGridCell">
-                                            <Border Background="Transparent" Padding="6,0" VerticalAlignment="Center">
-                                                <ContentPresenter VerticalAlignment="Center"/>
-                                            </Border>
-                                        </ControlTemplate>
-                                    </Setter.Value>
-                                </Setter>
-                            </Style>
-                        </DataGrid.CellStyle>
+                        <!-- 테이블 상단 타이틀 바 -->
+                        <Border Grid.Row="0" Background="#FFFFFF" BorderBrush="#E2E8F0" BorderThickness="0,0,0,1" Padding="16,10">
+                            <StackPanel Orientation="Horizontal">
+                                <iconPacks:PackIconMaterial Kind="FormatListChecks" Width="15" Height="15" Foreground="#2563EB" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <TextBlock Text="단계별 검사 결과 명세" FontSize="12" FontWeight="Bold" Foreground="#1E293B" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
 
-                        <DataGrid.RowStyle>
-                            <Style TargetType="DataGridRow">
-                                <Setter Property="Background" Value="#FFFFFF"/>
-                                <Setter Property="Foreground" Value="#0F172A"/>
-                                <Setter Property="BorderThickness" Value="0"/>
-                                <Style.Triggers>
-                                    <Trigger Property="IsMouseOver" Value="True">
-                                        <Setter Property="Background" Value="#F1F5F9"/>
-                                        <Setter Property="Foreground" Value="#0F172A"/>
-                                    </Trigger>
-                                    <Trigger Property="IsSelected" Value="True">
-                                        <Setter Property="Background" Value="#E2E8F0"/>
-                                        <Setter Property="Foreground" Value="#0F172A"/>
-                                    </Trigger>
-                                </Style.Triggers>
-                            </Style>
-                        </DataGrid.RowStyle>
+                        <DataGrid Grid.Row="1" ItemsSource="{Binding TestResults}" AutoGenerateColumns="False" IsReadOnly="True"
+          SelectedItem="{Binding SelectedTestResult, Mode=TwoWay}"
+          CanUserAddRows="False" Background="#FFFFFF" BorderThickness="0"
+          ColumnHeaderStyle="{StaticResource ModernColumnHeader}"
+          AlternationCount="2"
+          HeadersVisibility="Column" GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="#F1F5F9"
+          ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+          ScrollViewer.VerticalScrollBarVisibility="Auto"
+          ScrollViewer.CanContentScroll="False"
+          SelectionMode="Single" SelectionUnit="FullRow"
+          RowHeight="42" FontSize="12">
 
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="스텝" Binding="{Binding StepNo}" Width="60"/>
-                            <DataGridTextColumn Header="레일" Binding="{Binding ChannelName}" Width="90"/>
-                            <DataGridTextColumn Header="검사 항목" Binding="{Binding StepName}" Width="180"/>
-                            <DataGridTextColumn Header="모드" Binding="{Binding Mode}" Width="75"/>
-                            <DataGridTextColumn Header="인가 조건" Binding="{Binding TargetCondition}" Width="130"/>
-                            <DataGridTextColumn Header="판정 기준" Binding="{Binding SpecRange}" Width="160"/>
-                            <DataGridTextColumn Header="측정 전압 (V)" Binding="{Binding MeasuredVoltage, StringFormat='{}{0:F3}'}" Width="130"/>
-                            <DataGridTextColumn Header="측정 전류 (A)" Binding="{Binding MeasuredCurrent, StringFormat='{}{0:F3}'}" Width="130"/>
+                            <!-- MainWindow.xaml 내부 DataGrid.CellStyle 수정 -->
+                            <DataGrid.CellStyle>
+                                <Style TargetType="DataGridCell">
+                                    <Setter Property="BorderThickness" Value="0"/>
+                                    <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                                    <Setter Property="Foreground" Value="#0F172A"/>
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="DataGridCell">
+                                                <!-- [수정] VerticalAlignment="Center"를 제거하여 42px 높이 전체로 클릭 영역 확장 -->
+                                                <Border Background="Transparent" Padding="12,0" SnapsToDevicePixels="True">
+                                                    <ContentPresenter VerticalAlignment="Center"/>
+                                                </Border>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </DataGrid.CellStyle>
 
-                            <!-- 판정 뱃지 -->
-                            <DataGridTemplateColumn Header="판정" Width="90">
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <Border CornerRadius="4" Padding="8,2" HorizontalAlignment="Center">
-                                            <Border.Style>
-                                                <Style TargetType="Border">
-                                                    <Setter Property="Background" Value="#F1F5F9"/>
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding Result}" Value="PASS">
-                                                            <Setter Property="Background" Value="#D1FAE5"/>
-                                                        </DataTrigger>
-                                                        <DataTrigger Binding="{Binding Result}" Value="FAIL">
-                                                            <Setter Property="Background" Value="#FEE2E2"/>
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </Border.Style>
-                                            <TextBlock Text="{Binding Result}" FontWeight="Bold" FontSize="11">
-                                                <TextBlock.Style>
-                                                    <Style TargetType="TextBlock">
-                                                        <Setter Property="Foreground" Value="#64748B"/>
+                            <!-- [2] 행 스타일: 마우스 호버 및 클릭 선택 시 시각적 피드백 제공 -->
+                            <DataGrid.RowStyle>
+                                <Style TargetType="DataGridRow">
+                                    <Setter Property="Background" Value="#FFFFFF"/>
+                                    <Setter Property="Foreground" Value="#0F172A"/>
+                                    <Setter Property="BorderThickness" Value="4,0,0,1"/>
+                                    <Setter Property="BorderBrush" Value="Transparent"/>
+                                    <Setter Property="Cursor" Value="Hand"/>
+                                    <Setter Property="SnapsToDevicePixels" Value="True"/>
+                                    <Style.Triggers>
+                                        <!-- 줄무늬 번갈아 채우기 (RowBackground 대신 트리거로 부여하여 덮어쓰기 방지) -->
+                                        <Trigger Property="ItemsControl.AlternationIndex" Value="1">
+                                            <Setter Property="Background" Value="#F8FAFC"/>
+                                        </Trigger>
+
+                                        <!-- [호버 이벤트] 마우스 올렸을 때 부드러운 소프트 블루 -->
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Background" Value="#EFF6FF"/>
+                                            <Setter Property="BorderBrush" Value="#93C5FD"/>
+                                        </Trigger>
+
+                                        <!-- [클릭/선택 이벤트] 선택된 행은 좌측 4px 진한 파란색 인디케이터 바 + 블루 하이라이트 -->
+                                        <Trigger Property="IsSelected" Value="True">
+                                            <Setter Property="Background" Value="#DBEAFE"/>
+                                            <Setter Property="BorderBrush" Value="#2563EB"/>
+                                            <Setter Property="FontWeight" Value="SemiBold"/>
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </DataGrid.RowStyle>
+
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="STEP" Binding="{Binding StepNo}" Width="65" FontWeight="Bold"/>
+                                <DataGridTextColumn Header="출력 레일" Binding="{Binding ChannelName}" Width="85" FontWeight="SemiBold"/>
+                                <DataGridTextColumn Header="검사 항목" Binding="{Binding StepName}" Width="190" FontWeight="SemiBold"/>
+                                <DataGridTextColumn Header="모드" Binding="{Binding Mode}" Width="70"/>
+                                <DataGridTextColumn Header="인가 조건" Binding="{Binding TargetCondition}" Width="140"/>
+                                <DataGridTextColumn Header="판정 기준" Binding="{Binding SpecRange}" Width="160"/>
+                                <DataGridTextColumn Header="측정 전압 (V)" Binding="{Binding MeasuredVoltage, StringFormat='{}{0:F3}'}" Width="120" FontWeight="Bold"/>
+                                <DataGridTextColumn Header="측정 전류 (A)" Binding="{Binding MeasuredCurrent, StringFormat='{}{0:F3}'}" Width="120" FontWeight="Bold"/>
+
+                                <!-- 판정 뱃지 -->
+                                <DataGridTemplateColumn Header="판정" Width="90">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Border CornerRadius="6" Padding="10,3" HorizontalAlignment="Left">
+                                                <Border.Style>
+                                                    <Style TargetType="Border">
+                                                        <Setter Property="Background" Value="#F1F5F9"/>
                                                         <Style.Triggers>
                                                             <DataTrigger Binding="{Binding Result}" Value="PASS">
-                                                                <Setter Property="Foreground" Value="#047857"/>
+                                                                <Setter Property="Background" Value="#D1FAE5"/>
                                                             </DataTrigger>
                                                             <DataTrigger Binding="{Binding Result}" Value="FAIL">
-                                                                <Setter Property="Foreground" Value="#B91C1C"/>
+                                                                <Setter Property="Background" Value="#FEE2E2"/>
                                                             </DataTrigger>
                                                         </Style.Triggers>
                                                     </Style>
-                                                </TextBlock.Style>
-                                            </TextBlock>
-                                        </Border>
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                            </DataGridTemplateColumn>
-                            <DataGridTextColumn Header="측정 일시" Binding="{Binding Timestamp}" Width="*"/>
-                        </DataGrid.Columns>
-                    </DataGrid>
+                                                </Border.Style>
+                                                <TextBlock Text="{Binding Result}" FontWeight="Black" FontSize="11">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock">
+                                                            <Setter Property="Foreground" Value="#64748B"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding Result}" Value="PASS">
+                                                                    <Setter Property="Foreground" Value="#047857"/>
+                                                                </DataTrigger>
+                                                                <DataTrigger Binding="{Binding Result}" Value="FAIL">
+                                                                    <Setter Property="Foreground" Value="#B91C1C"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
+                                            </Border>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTextColumn Header="측정 일시" Binding="{Binding Timestamp}" Width="*"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
                 </Border>
             </Grid>
         </Grid>
 
         <!-- ================= 2. 하단 슬림 상태 바 ================= -->
-        <Border Grid.Row="2" Background="#FFFFFF" BorderBrush="#E2E8F0" BorderThickness="0,1,0,0" Padding="20,0">
+        <Border Grid.Row="2" Background="#FFFFFF" BorderBrush="#E2E8F0" BorderThickness="0,1,0,0" Padding="24,0">
             <Grid VerticalAlignment="Center">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
-                <TextBlock Grid.Column="0" Text="SYSTEM READY" FontSize="10" FontWeight="Bold" Foreground="#94A3B8" Margin="0,0,10,0"/>
-                <TextBlock Grid.Column="1" Text="{Binding StatusMessage}" FontSize="11" FontWeight="SemiBold" Foreground="#2563EB"/>
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,12,0">
+                    <Ellipse Width="6" Height="6" Fill="#10B981" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                    <TextBlock Text="SYSTEM STATUS" FontSize="10" FontWeight="Black" Foreground="#64748B" VerticalAlignment="Center"/>
+                </StackPanel>
+                <TextBlock Grid.Column="1" Text="{Binding StatusMessage}" FontSize="11.5" FontWeight="SemiBold" Foreground="#2563EB" VerticalAlignment="Center"/>
             </Grid>
         </Border>
     </Grid>

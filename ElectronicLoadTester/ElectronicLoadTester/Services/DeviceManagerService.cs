@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.IO.Ports;
 using System.Text;
@@ -130,7 +131,7 @@ namespace ElectronicLoadTester.Services
                                 break;
                             }
                         }
-                        Thread.Sleep(20);
+                        Thread.Sleep(15);
                     }
 
                     string rx = sb.ToString().Trim();
@@ -300,29 +301,223 @@ namespace ElectronicLoadTester.Services
         }
         #endregion
 
-        #region [릴레이 제어 로직 (0~3 인덱스 정정 및 고속화)]
+        #region [파워 서플라이 제어 (SCPI)]
+        public async Task<bool> SetPowerSupplyOutputAsync(double voltage, double current, bool turnOn)
+        {
+            if (string.IsNullOrEmpty(OwonPortName)) return false;
 
-        // 릴레이 1~8번 번호 -> (레이어, 0~3 채널 인덱스) 맵핑
+            await QueryCommandAsync(OwonPortName, TargetBaudRate, $"VOLT {voltage:F2}\n", 300);
+            await QueryCommandAsync(OwonPortName, TargetBaudRate, $"CURR {current:F2}\n", 300);
+
+            string cmd = turnOn ? "OUTP ON\n" : "OUTP OFF\n";
+            await QueryCommandAsync(OwonPortName, TargetBaudRate, cmd, 300);
+
+            Debug.WriteLine($"[파워 제어] 전압:{voltage:F2}V, 전류제한:{current:F2}A -> 출력을 {(turnOn ? "ON" : "OFF")} 하였습니다.");
+            return true;
+        }
+
+        public async Task<(double volt, double curr)> MeasurePowerSupplyAsync()
+        {
+            if (string.IsNullOrEmpty(OwonPortName)) return (0, 0);
+
+            string vStr = await QueryCommandAsync(OwonPortName, TargetBaudRate, "MEAS:VOLT?\n", 300);
+            string cStr = await QueryCommandAsync(OwonPortName, TargetBaudRate, "MEAS:CURR?\n", 300);
+
+            return (ParseScpiDouble(vStr), ParseScpiDouble(cStr));
+        }
+        #endregion
+
+        #region [Rigol 전자 부하기 제어 (검증된 SCPI 및 물리 LED 점등 보장)]
+
+        // 1. 단독 부하 입력 ON/OFF 제어 (전면 물리 버튼 LED 점등/소등)
+        public async Task<bool> SetLoadInputAsync(bool turnOn)
+        {
+            if (string.IsNullOrEmpty(RigolPortName)) return false;
+
+            string cmd = turnOn ? ":SOUR:INP ON\n" : ":SOUR:INP OFF\n";
+            await QueryCommandAsync(RigolPortName, TargetBaudRate, cmd, 200);
+
+            Debug.WriteLine($"[전자로더 입력 상태] -> {(turnOn ? "ON (LED 점등, 통전)" : "OFF (LED 소등, 차단)")}");
+            return true;
+        }
+
+        // 2. 지속 부하 시험 및 일반 설정 적용
+        public async Task<bool> ConfigureLoadAsync(string mode, double setVal)
+        {
+            if (string.IsNullOrEmpty(RigolPortName)) return false;
+
+            try
+            {
+                await QueryCommandAsync(RigolPortName, TargetBaudRate, ":SYST:REM\n", 150);
+                await QueryCommandAsync(RigolPortName, TargetBaudRate, "*CLS\n", 100);
+                await QueryCommandAsync(RigolPortName, TargetBaudRate, ":SOUR:INP OFF\n", 150);
+
+                if (mode.Equals("CC", StringComparison.OrdinalIgnoreCase))
+                {
+                    await QueryCommandAsync(RigolPortName, TargetBaudRate, ":SOUR:FUNC CURR\n", 150);
+                    double range = (setVal > 4.0) ? 40.0 : 4.0;
+                    await QueryCommandAsync(RigolPortName, TargetBaudRate, $":SOUR:CURR:RANG {range:F1}\n", 150);
+                    await QueryCommandAsync(RigolPortName, TargetBaudRate, $":SOUR:CURR:LEV {setVal:F3}\n", 150);
+                }
+                else
+                {
+                    await QueryCommandAsync(RigolPortName, TargetBaudRate, ":SOUR:FUNC VOLT\n", 150);
+                    double range = (setVal > 15.0) ? 150.0 : 15.0;
+                    await QueryCommandAsync(RigolPortName, TargetBaudRate, $":SOUR:VOLT:RANG {range:F1}\n", 150);
+                    await QueryCommandAsync(RigolPortName, TargetBaudRate, $":SOUR:VOLT:LEV {setVal:F3}\n", 150);
+                }
+
+                Debug.WriteLine($"[전자로더 설정 성공] 모드:{mode}, 인가값:{setVal:F3}");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[전자로더 설정 예외]: {ex.Message}");
+                return false;
+            }
+        }
+
+        // 3. [CC 과전류 차단 시험] 사전 준비 (40A 고정 레인지, 시작전류 인가 후 INPUT ON)
+        public async Task<bool> PrepareLoadForCcSweepAsync(double startCurrent)
+        {
+            if (string.IsNullOrEmpty(RigolPortName)) return false;
+
+            try
+            {
+                await QueryCommandAsync(RigolPortName, TargetBaudRate, ":SYST:REM\n", 150);
+                await QueryCommandAsync(RigolPortName, TargetBaudRate, "*CLS\n", 100);
+
+                await QueryCommandAsync(RigolPortName, TargetBaudRate, ":SOUR:INP OFF\n", 150);
+                await QueryCommandAsync(RigolPortName, TargetBaudRate, ":SOUR:FUNC CURR\n", 150);
+
+                // 스위핑 중 레인지 변경으로 인한 순간 차단 방지 (40A 고정)
+                await QueryCommandAsync(RigolPortName, TargetBaudRate, ":SOUR:CURR:RANG 40.0\n", 150);
+                await QueryCommandAsync(RigolPortName, TargetBaudRate, $":SOUR:CURR:LEV {startCurrent:F3}\n", 150);
+
+                // 전면 물리 [On/Off] 버튼 LED 점등 및 실제 부하 통전
+                await QueryCommandAsync(RigolPortName, TargetBaudRate, ":SOUR:INP ON\n", 250);
+
+                Debug.WriteLine($"[Rigol CC 스위핑 사전 준비] 40A 레인지, 시작전류:{startCurrent:F3}A -> :SOUR:INP ON (LED 점등)");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[Rigol CC 스위핑 준비 예외]: {ex.Message}");
+                return false;
+            }
+        }
+
+        // 4. [CC 과전류 차단 시험] 연속 전류 변경 (부하 입력을 끄지 않고 전류만 계단식 상향)
+        public async Task<bool> SetLoadCurrentImmediateAsync(double currentA)
+        {
+            if (string.IsNullOrEmpty(RigolPortName)) return false;
+
+            string cmd = $":SOUR:CURR:LEV {currentA:F3}\n";
+            await QueryCommandAsync(RigolPortName, TargetBaudRate, cmd, 100);
+            return true;
+        }
+
+        // =========================================================================
+        // 5. [신규: CV 과전압 차단 시험] 사전 준비 (150V 고정 레인지, 시작전압 인가 후 INPUT ON)
+        // =========================================================================
+        public async Task<bool> PrepareLoadForCvSweepAsync(double startVoltage)
+        {
+            if (string.IsNullOrEmpty(RigolPortName)) return false;
+
+            try
+            {
+                await QueryCommandAsync(RigolPortName, TargetBaudRate, ":SYST:REM\n", 150);
+                await QueryCommandAsync(RigolPortName, TargetBaudRate, "*CLS\n", 100);
+
+                await QueryCommandAsync(RigolPortName, TargetBaudRate, ":SOUR:INP OFF\n", 150);
+                await QueryCommandAsync(RigolPortName, TargetBaudRate, ":SOUR:FUNC VOLT\n", 150);
+
+                // 스위핑 중 레인지 변경으로 인한 순간 차단 방지 (150V 고정)
+                await QueryCommandAsync(RigolPortName, TargetBaudRate, ":SOUR:VOLT:RANG 150.0\n", 150);
+                await QueryCommandAsync(RigolPortName, TargetBaudRate, $":SOUR:VOLT:LEV {startVoltage:F3}\n", 150);
+
+                // 전면 물리 [On/Off] 버튼 LED 점등 및 실제 부하 통전
+                await QueryCommandAsync(RigolPortName, TargetBaudRate, ":SOUR:INP ON\n", 250);
+
+                Debug.WriteLine($"[Rigol CV 스위핑 사전 준비] 150V 레인지, 시작전압:{startVoltage:F3}V -> :SOUR:INP ON (LED 점등)");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[Rigol CV 스위핑 준비 예외]: {ex.Message}");
+                return false;
+            }
+        }
+
+        // =========================================================================
+        // 6. [신규: CV 과전압 차단 시험] 연속 전압 변경 (부하 입력을 끄지 않고 전압만 계단식 상향)
+        // =========================================================================
+        public async Task<bool> SetLoadVoltageImmediateAsync(double voltageV)
+        {
+            if (string.IsNullOrEmpty(RigolPortName)) return false;
+
+            string cmd = $":SOUR:VOLT:LEV {voltageV:F3}\n";
+            await QueryCommandAsync(RigolPortName, TargetBaudRate, cmd, 100);
+            return true;
+        }
+
+        // 복합 쿼리(:MEAS:VOLT?;:MEAS:CURR?)를 통한 고속 1회 실측 계측
+        public async Task<(double volt, double curr)> MeasureLoadAsync()
+        {
+            if (string.IsNullOrEmpty(RigolPortName)) return (0, 0);
+
+            string rx = await QueryCommandAsync(RigolPortName, TargetBaudRate, ":MEAS:VOLT?;:MEAS:CURR?\n", 250);
+
+            if (!string.IsNullOrWhiteSpace(rx))
+            {
+                string[] tokens = rx.Split(';');
+                if (tokens.Length >= 2)
+                {
+                    double v = ParseScpiDouble(tokens[0]);
+                    double c = ParseScpiDouble(tokens[1]);
+                    return (v, c);
+                }
+                else if (tokens.Length == 1)
+                {
+                    return (ParseScpiDouble(tokens[0]), 0.0);
+                }
+            }
+
+            return (0, 0);
+        }
+
+        private static double ParseScpiDouble(string raw)
+        {
+            if (string.IsNullOrWhiteSpace(raw)) return 0.0;
+            raw = raw.Trim();
+            if (double.TryParse(raw, NumberStyles.Float | NumberStyles.AllowThousands, CultureInfo.InvariantCulture, out double val))
+            {
+                return val;
+            }
+            return 0.0;
+        }
+        #endregion
+
+        #region [릴레이 제어 로직 (위층 0~3 레일 단일화 적용)]
         private (int layer, int channel)? GetRelayAddress(int relayNumber)
         {
             return relayNumber switch
             {
-                // [위층 레이어 0: 채널 0 ~ 3]
-                1 => (0, 0), // 릴레이 1번: set.do.0.0 (CI 5V)
-                2 => (0, 1), // 릴레이 2번: set.do.0.1 (CI 30V)
-                3 => (0, 2), // 릴레이 3번: set.do.0.2 (SIV 5V)
-                4 => (0, 3), // 릴레이 4번: set.do.0.3 (SIV 30V)
+                // [위층 레이어 0: 4대 출력 레일 전용]
+                1 => (0, 0), // 릴레이 1번: set.do.0.0 (5V 레일 통합 투입)
+                2 => (0, 1), // 릴레이 2번: set.do.0.1 (24V 레일 통합 투입)
+                3 => (0, 2), // 릴레이 3번: set.do.0.2 (30V 레일 통합 투입)
+                4 => (0, 3), // 릴레이 4번: set.do.0.3 (48V 레일 통합 투입)
 
-                // [아래층 레이어 1: 채널 0 ~ 3]
-                5 => (1, 0), // 릴레이 5번: set.do.1.0 (TCMS 5V)
-                6 => (1, 1), // 릴레이 6번: set.do.1.1 (TCMS 24V)
-                7 => (1, 2), // 릴레이 7번: set.do.1.2 (100V 메인 투입)
-                8 => (1, 3), // 릴레이 8번: set.do.1.3 (CI 24V)
+                // [아래층 레이어 1: 메인 전원 및 예비]
+                5 => (1, 0), // 릴레이 5번: set.do.1.0 (예비)
+                6 => (1, 1), // 릴레이 6번: set.do.1.1 (예비)
+                7 => (1, 2), // 릴레이 7번: set.do.1.2 (100V 메인 투입 전용)
+                8 => (1, 3), // 릴레이 8번: set.do.1.3 (예비)
                 _ => null
             };
         }
 
-        // 상시 오픈 포트를 통한 고속 명령 전송 (RS-485 회선 충돌 방지 적용)
         private async Task<bool> SendRelayFastCommandAsync(string command)
         {
             if (string.IsNullOrEmpty(RelayPortName)) return false;
@@ -350,14 +545,11 @@ namespace ElectronicLoadTester.Services
                             _persistentRelayPort.DiscardOutBuffer();
                         }
 
-                        // 1. 송신 전 남아있는 잔류 수신 데이터 청소
                         _persistentRelayPort.DiscardInBuffer();
 
-                        // 2. 명령어 송신
                         byte[] txBytes = Encoding.ASCII.GetBytes(command);
                         _persistentRelayPort.Write(txBytes, 0, txBytes.Length);
 
-                        // 3. RS-485 반이중 충돌 방지: 보드가 응답을 마칠 때까지 최대 50ms 대기 후 회선 안정화
                         var sw = Stopwatch.StartNew();
                         while (sw.ElapsedMilliseconds < 50)
                         {
@@ -402,7 +594,6 @@ namespace ElectronicLoadTester.Services
             }
         }
 
-        // 단일 릴레이 On / Off 제어 (set.do.X.Y.on / off)
         public async Task<bool> SetRelayAsync(int relayNumber, bool turnOn)
         {
             var addr = GetRelayAddress(relayNumber);
@@ -422,7 +613,6 @@ namespace ElectronicLoadTester.Services
             return ok;
         }
 
-        // 전체 릴레이 일괄 즉시 차단 (set.do.0.alloff + set.do.1.alloff)
         public async Task ResetAllRelaysAsync()
         {
             if (string.IsNullOrEmpty(RelayPortName)) return;
@@ -434,54 +624,64 @@ namespace ElectronicLoadTester.Services
             _currentActiveRelay = 0;
         }
 
-        // 시험 대상(CI / SIV / TCMS) 및 레일(5V / 24V / 30V)에 따른 릴레이 고속 전환
         public async Task<bool> ConnectTargetRailRelayAsync(string systemName, string railName)
         {
-            int targetRelay = (systemName.ToUpper(), railName.ToUpper()) switch
+            string sys = systemName.Trim().ToUpper();
+            string rail = railName.Trim().ToUpper();
+
+            bool isSupported = (sys, rail) switch
             {
-                ("CI", "5V") => 1, // set.do.0.0
-                ("CI", "30V") => 2, // set.do.0.1
-                ("CI", "24V") => 8, // set.do.1.3
+                ("TCMS-CC", "5V") or ("TCMS-CC", "24V") => true,
+                ("TCMS-TC", "5V") or ("TCMS-TC", "24V") => true,
+                ("TCMS", "5V") or ("TCMS", "24V") => true,
 
-                ("SIV", "5V") => 3, // set.do.0.2
-                ("SIV", "30V") => 4, // set.do.0.3
+                ("CI-123", "5V") or ("CI-123", "30V") or ("CI-123", "48V") => true,
+                ("CI-4", "5V") or ("CI-4", "30V") or ("CI-4", "48V") => true,
+                ("CI", "5V") or ("CI", "30V") or ("CI", "48V") => true,
 
-                ("TCMS", "5V") => 5, // set.do.1.0
-                ("TCMS", "24V") => 6, // set.do.1.1
+                ("SIV-123", "5V") or ("SIV-123", "24V") or ("SIV-123", "30V") => true,
+                ("SIV-4", "5V") or ("SIV-4", "30V") => true,
+                ("SIV", "5V") or ("SIV", "30V") => true,
 
-                _ => 0
+                _ => false
             };
 
-            // 1. 미할당 레일 선택 시 기존에 켜져 있던 릴레이만 끄고 종료
-            if (targetRelay == 0)
+            if (!isSupported)
             {
-                if (_currentActiveRelay > 0)
+                Debug.WriteLine($"[릴레이 거부] {systemName} 모듈은 {railName} 레일을 지원하지 않습니다.");
+                if (_currentActiveRelay >= 1 && _currentActiveRelay <= 4)
                 {
                     await SetRelayAsync(_currentActiveRelay, false);
                 }
                 return false;
             }
 
-            // 2. 이미 해당 릴레이가 켜져 있으면 추가 통신 생략
+            int targetRelay = rail switch
+            {
+                "5V" => 1,
+                "24V" => 2,
+                "30V" => 3,
+                "48V" => 4,
+                _ => 0
+            };
+
+            if (targetRelay == 0) return false;
             if (_currentActiveRelay == targetRelay) return true;
 
-            // 3. 기존에 켜져 있던 릴레이가 있었다면 단일 off 명령으로 즉시 해제 (Break-Before-Make)
-            if (_currentActiveRelay > 0)
+            if (_currentActiveRelay >= 1 && _currentActiveRelay <= 4)
             {
                 await SetRelayAsync(_currentActiveRelay, false);
                 await Task.Delay(30);
             }
 
-            // 4. 대상 릴레이 단독 투입
             bool ok = await SetRelayAsync(targetRelay, true);
-            Debug.WriteLine($"[릴레이 투입 완료] {systemName} {railName} -> 릴레이 {targetRelay}번 ON");
+            Debug.WriteLine($"[릴레이 투입 성공] {systemName} {railName} -> 릴레이 {targetRelay}번 ON");
             return ok;
         }
 
-        // 릴레이 7번 (100V 메인 파워 인터록 스위치) 제어
         public async Task<bool> SetMain100VRelayAsync(bool turnOn)
         {
-            return await SetRelayAsync(7, turnOn); // set.do.1.2.on / off
+            return await SetRelayAsync(7, turnOn); // 릴레이 7번: set.do.1.2 (100V 메인 투입 전용)
         }
         #endregion
 

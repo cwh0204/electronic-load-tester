@@ -10,7 +10,7 @@ namespace ElectronicLoadTester.Hardware
     public interface IDevice : IAsyncDisposable, IDisposable
     {
         /// <summary>
-        /// 장비 식별 명칭 (예: "OWON SPE3103", "Rigol DL3021", "Relay Controller #1")
+        /// 장비 식별 명칭 (예: "SPE3103", "Rigol DL3021", "Relay Controller #1")
         /// </summary>
         string DeviceName { get; }
 

@@ -34,7 +34,8 @@ namespace ElectronicLoadTester
                     services.AddSingleton<MainWindow>();
                     services.AddTransient<SelfTestWindow>();
 
-                    services.AddSingleton<IDeviceManagerService>(DeviceManagerService.Instance);
+                    //services.AddSingleton<IDeviceManagerService>(DeviceManagerService.Instance);
+                    services.AddSingleton<IDeviceManagerService>(MockDeviceManagerService.Instance);
                     services.AddSingleton<ITestResultHistoryService, TestResultHistoryService>();
                 })
                 .Build();
